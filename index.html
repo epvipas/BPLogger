@@ -722,12 +722,25 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- PRIVACY NOTICE MODAL (first visit only) -->
+<div class="modal-overlay" id="privacyModal">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <div style="font-size:2.2rem;margin-bottom:10px;">🔒</div>
+    <div class="modal-title" style="justify-content:center;">Your data stays on your device</div>
+    <p style="font-size:0.88rem;color:var(--text);line-height:1.6;margin-bottom:20px;">
+      This app uses the browser storage on your own device. No data is stored on this site or sent anywhere else unless you export and send reports to your GP or any other party.
+    </p>
+    <button class="btn btn-primary btn-block" onclick="dismissPrivacy()">Got it</button>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════
 //  DATA LAYER
 // ═══════════════════════════════════════════════
 const STORE_KEY = 'bp_readings_v2';
 const SETTINGS_KEY = 'bp_settings_v2';
+const PRIVACY_KEY = 'bp_privacy_seen';
 
 function getReadings() {
   try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
@@ -1673,6 +1686,14 @@ function confirmClearData() {
 }
 
 // ═══════════════════════════════════════════════
+//  PRIVACY NOTICE
+// ═══════════════════════════════════════════════
+function dismissPrivacy() {
+  localStorage.setItem(PRIVACY_KEY, '1');
+  document.getElementById('privacyModal').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
 // Initialise date/time fields to current date and time
@@ -1682,6 +1703,11 @@ function confirmClearData() {
   document.getElementById('readingDate').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   document.getElementById('readingTime').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 })();
+
+// Show privacy notice on first visit
+if (!localStorage.getItem(PRIVACY_KEY)) {
+  document.getElementById('privacyModal').classList.add('open');
+}
 
 // Close modals on overlay click
 document.querySelectorAll('.modal-overlay').forEach(overlay=>{
