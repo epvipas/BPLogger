@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#1e40af">
+  <title>BP Logger — Blood Pressure Monitor</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1e40af;
+      --primary-mid: #2563eb;
+      --primary-light: #eff6ff;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+      --optimal:    #15803d;
+      --normal:     #16a34a;
+      --highnorm:   #b45309;
+      --grade1:     #c2410c;
+      --grade2:     #b91c1c;
+      --grade3:     #7c3aed;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 60%, #2563eb 100%);
+      color: white;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(30,64,175,0.35);
+    }
+    .header-title { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.03em; }
+    .header-sub   { font-size: 0.7rem; opacity: 0.75; margin-top: 1px; }
+    .icon-btn {
+      background: rgba(255,255,255,0.18);
+      border: none; color: white;
+      width: 38px; height: 38px;
+      border-radius: 50%; cursor: pointer;
+      font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.28); }
+
+    /* desktop nav in header */
+    .desk-nav { display: none; gap: 4px; }
+    .desk-nav-btn {
+      padding: 7px 14px; border: none;
+      background: rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.85);
+      border-radius: 7px; cursor: pointer;
+      font-size: 0.8rem; font-weight: 600;
+      transition: all 0.2s;
+    }
+    .desk-nav-btn.active { background: rgba(255,255,255,0.32); color: white; }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex; z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .nav-btn {
+      flex: 1; padding: 9px 4px;
+      border: none; background: none; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      color: var(--muted); font-size: 0.62rem; font-weight: 600;
+      transition: color 0.2s; letter-spacing: 0.02em;
+    }
+    .nav-btn .ni { font-size: 1.35rem; }
+    .nav-btn.active { color: var(--primary); }
+
+    /* ── MAIN ── */
+    main { padding: 16px; max-width: 840px; margin: 0 auto; }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 0.95rem; font-weight: 700;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ── FORM ── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block; font-size: 0.78rem; font-weight: 700;
+      margin-bottom: 5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .form-control {
+      width: 100%; padding: 11px 14px;
+      border: 2px solid var(--border); border-radius: 10px;
+      font-size: 1rem; color: var(--text); background: white;
+      transition: border-color 0.2s; -webkit-appearance: none;
+    }
+    .form-control:focus { outline: none; border-color: var(--primary-mid); }
+    .bp-input { font-size: 1.5rem; font-weight: 800; text-align: center; padding: 14px 8px; }
+    .bp-label-group { text-align: center; }
+    .bp-unit { font-size: 0.68rem; color: var(--muted); margin-top: 3px; text-align: center; }
+    textarea.form-control { resize: vertical; min-height: 76px; font-size: 0.9rem; }
+
+    /* session radio */
+    .session-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .session-btn {
+      flex: 1; min-width: 80px;
+      padding: 9px 12px; border: 2px solid var(--border);
+      border-radius: 8px; background: white;
+      font-size: 0.8rem; font-weight: 600; color: var(--muted);
+      cursor: pointer; text-align: center; transition: all 0.2s;
+    }
+    .session-btn.selected { border-color: var(--primary-mid); color: var(--primary); background: var(--primary-light); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 13px 22px; border: none; border-radius: 10px;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      transition: all 0.18s; display: inline-flex; align-items: center;
+      justify-content: center; gap: 6px;
+    }
+    .btn-block { width: 100%; }
+    .btn-primary { background: var(--primary-mid); color: white; }
+    .btn-primary:hover { background: var(--primary); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-secondary { background: var(--bg); color: var(--text); border: 2px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-danger-sm {
+      padding: 5px 10px; border: none; border-radius: 6px;
+      background: #fee2e2; color: #b91c1c;
+      font-size: 0.75rem; font-weight: 700; cursor: pointer;
+    }
+    .btn-edit-sm {
+      padding: 5px 10px; border: none; border-radius: 6px;
+      background: #eff6ff; color: var(--primary-mid);
+      font-size: 0.75rem; font-weight: 700; cursor: pointer;
+    }
+    .btn-sm { padding: 9px 16px; font-size: 0.82rem; }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ── CATEGORY BADGE ── */
+    .badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 20px; font-size: 0.72rem; font-weight: 700; color: white;
+    }
+
+    /* ── STATS ── */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stats-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .stat-card {
+      background: var(--primary-light); border-radius: 10px;
+      padding: 14px 10px; text-align: center;
+    }
+    .stat-val { font-size: 1.9rem; font-weight: 900; color: var(--primary); line-height: 1; }
+    .stat-lbl { font-size: 0.65rem; color: var(--muted); margin-top: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 520px; }
+    th {
+      background: var(--bg); padding: 9px 10px;
+      text-align: left; font-weight: 700; font-size: 0.7rem;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+
+    /* ── CHARTS ── */
+    .chart-box { position: relative; height: 240px; }
+
+    /* ── GUIDELINES TABLE ── */
+    .guide-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .guide-table th, .guide-table td { padding: 7px 9px; border: 1px solid var(--border); }
+    .guide-table th { background: var(--bg); font-weight: 700; }
+    .guide-table td:first-child { font-weight: 600; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed;
+      inset: 0; background: rgba(15,23,42,0.55);
+      z-index: 200; padding: 20px;
+      align-items: flex-start; justify-content: center;
+      overflow-y: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: var(--radius);
+      padding: 24px; width: 100%; max-width: 480px;
+      margin: auto; position: relative;
+    }
+    .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 18px; }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px;
+      background: var(--bg); border: none;
+      width: 30px; height: 30px; border-radius: 50%;
+      cursor: pointer; font-size: 1rem; color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+    .empty .ei { font-size: 3rem; margin-bottom: 10px; }
+    .empty p { font-size: 0.875rem; }
+
+    /* ── ALERT ── */
+    .alert { padding: 12px 16px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 14px; }
+    .alert-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .alert-warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .alert-danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .alert-ok { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 90px; left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a; color: white;
+      padding: 11px 22px; border-radius: 24px;
+      font-size: 0.85rem; font-weight: 600;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s; z-index: 400; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── ZONE LEGEND ── */
+    .zone-legend { display: flex; flex-wrap: wrap; gap: 8px; }
+    .zone-item { display: flex; align-items: center; gap: 6px; font-size: 0.76rem; }
+    .zone-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── BP GAUGE ── */
+    .bp-gauge-bar {
+      height: 10px; border-radius: 5px; margin: 8px 0;
+      background: linear-gradient(to right,
+        #15803d 0% 18%, #16a34a 18% 32%,
+        #b45309 32% 48%, #c2410c 48% 64%,
+        #b91c1c 64% 80%, #7c3aed 80% 100%);
+    }
+    .bp-gauge-needle {
+      position: relative; height: 0;
+    }
+    .bp-gauge-needle::after {
+      content: '▲';
+      position: absolute;
+      top: -16px; font-size: 10px;
+      transform: translateX(-50%);
+      color: var(--text);
+    }
+
+    /* ── DIVIDER ── */
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+    /* report preview */
+    .report-preview {
+      background: var(--bg); border-radius: 10px;
+      padding: 16px; font-size: 0.8rem; white-space: pre-wrap;
+      max-height: 260px; overflow-y: auto;
+      font-family: 'Courier New', monospace; color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* ── DESKTOP ── */
+    @media (min-width: 640px) {
+      body { padding-bottom: 0; }
+      .bottom-nav { display: none; }
+      .desk-nav { display: flex; }
+      main { padding: 24px; }
+      .chart-box { height: 280px; }
+      .stats-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
+      .form-row { grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    @media (max-width: 479px) {
+      .hide-xs { display: none; }
+    }
+
+    /* ── GP SEARCH DROPDOWN ── */
+    .gp-search-wrap { position: relative; }
+    .gp-dropdown {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: white;
+      border: 2px solid var(--primary-mid);
+      border-top: none; border-radius: 0 0 10px 10px;
+      max-height: 210px; overflow-y: auto;
+      z-index: 500; box-shadow: 0 8px 28px rgba(0,0,0,0.15);
+      display: none;
+    }
+    .gp-result {
+      padding: 10px 14px; cursor: pointer;
+      border-bottom: 1px solid var(--border);
+    }
+    .gp-result:last-child { border-bottom: none; }
+    .gp-result:hover, .gp-result:focus { background: var(--primary-light); outline: none; }
+    .gp-result-name { font-size: 0.84rem; font-weight: 700; color: var(--text); }
+    .gp-result-addr { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .gp-status { padding: 12px 14px; color: var(--muted); font-size: 0.82rem; text-align: center; }
+    .gp-nhs-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      color: var(--primary-mid); font-size: 0.8rem; font-weight: 600;
+      text-decoration: none; margin-top: 6px;
+    }
+    .gp-nhs-link:hover { text-decoration: underline; }
+    .gp-filled-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f0fdf4; border: 1px solid #bbf7d0;
+      color: #15803d; font-size: 0.78rem; font-weight: 600;
+      padding: 6px 12px; border-radius: 8px; margin-bottom: 10px;
+    }
+
+    /* ── PRINT ── */
+    @media print {
+      header, .bottom-nav, .desk-nav, .icon-btn,
+      .no-print, .btn-group, .btn, .modal-overlay { display: none !important; }
+      body { background: white; padding: 0; font-size: 11pt; }
+      .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; margin-bottom: 12px; }
+      .tab-pane { display: block !important; }
+      main { padding: 0; }
+      table { font-size: 9pt; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <div class="header-title">❤️ BP Logger</div>
+    <div class="header-sub">Blood Pressure Monitor</div>
+  </div>
+  <nav class="desk-nav" id="deskNav">
+    <button class="desk-nav-btn active" onclick="switchTab('log', this)">📝 Log Reading</button>
+    <button class="desk-nav-btn" onclick="switchTab('history', this)">📋 History</button>
+    <button class="desk-nav-btn" onclick="switchTab('analysis', this)">📊 Analysis</button>
+    <button class="desk-nav-btn" onclick="switchTab('report', this)">📧 Report</button>
+  </nav>
+  <button class="icon-btn" onclick="openSettings()" title="Settings">⚙️</button>
+</header>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="btn-log" onclick="switchTab('log', this)">
+    <span class="ni">📝</span>Log
+  </button>
+  <button class="nav-btn" id="btn-history" onclick="switchTab('history', this)">
+    <span class="ni">📋</span>History
+  </button>
+  <button class="nav-btn" id="btn-analysis" onclick="switchTab('analysis', this)">
+    <span class="ni">📊</span>Analysis
+  </button>
+  <button class="nav-btn" id="btn-report" onclick="switchTab('report', this)">
+    <span class="ni">📧</span>Report
+  </button>
+</nav>
+
+<main>
+
+  <!-- ══════════════ LOG TAB ══════════════ -->
+  <div class="tab-pane active" id="pane-log">
+
+    <div class="card">
+      <div class="card-title">💉 New Blood Pressure Reading</div>
+
+      <div class="form-row">
+        <div class="bp-label-group">
+          <label class="form-label">Systolic</label>
+          <input class="form-control bp-input" type="number" id="sys"
+            min="60" max="300" inputmode="numeric">
+          <div class="bp-unit">mmHg</div>
+        </div>
+        <div class="bp-label-group">
+          <label class="form-label">Diastolic</label>
+          <input class="form-control bp-input" type="number" id="dia"
+            min="30" max="200" inputmode="numeric">
+          <div class="bp-unit">mmHg</div>
+        </div>
+        <div class="bp-label-group">
+          <label class="form-label">Pulse <span style="font-size:0.65rem;font-weight:400;color:var(--muted);">(optional)</span></label>
+          <input class="form-control bp-input" type="number" id="pulse"
+            min="30" max="250" inputmode="numeric">
+          <div class="bp-unit">bpm</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Date &amp; Time</label>
+        <div style="display:flex;gap:8px;">
+          <input class="form-control" type="date" id="readingDate" style="flex:1;">
+          <input class="form-control" type="time" id="readingTime" style="flex:1;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <textarea class="form-control" id="notes" placeholder="e.g. After exercise, felt stressed, just woke up…"></textarea>
+      </div>
+
+      <div id="previewBadge" style="margin-bottom:14px;display:none;">
+        <div class="alert" id="previewAlert"></div>
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="saveReading()">
+        ✅ Save Reading
+      </button>
+    </div>
+
+    <!-- BHS Quick Reference -->
+    <div class="card">
+      <div class="card-title">📖 BHS Classification Reference</div>
+      <div class="zone-legend" style="margin-bottom:12px;">
+        <div class="zone-item"><div class="zone-dot" style="background:#15803d"></div>Optimal (&lt;120/80)</div>
+        <div class="zone-item"><div class="zone-dot" style="background:#16a34a"></div>Normal (120–129 / 80–84)</div>
+        <div class="zone-item"><div class="zone-dot" style="background:#b45309"></div>High-Normal (130–139 / 85–89)</div>
+        <div class="zone-item"><div class="zone-dot" style="background:#c2410c"></div>Grade 1 HTN (140–159 / 90–99)</div>
+        <div class="zone-item"><div class="zone-dot" style="background:#b91c1c"></div>Grade 2 HTN (160–179 / 100–109)</div>
+        <div class="zone-item"><div class="zone-dot" style="background:#7c3aed"></div>Grade 3 HTN (≥180 / ≥110)</div>
+      </div>
+      <div class="alert alert-info" style="font-size:0.78rem;">
+        <strong>Home monitoring:</strong> Home readings ≥135/85 mmHg indicate hypertension (equivalent to clinic ≥140/90 mmHg) — <em>British and Irish Hypertension Society 2023</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ HISTORY TAB ══════════════ -->
+  <div class="tab-pane" id="pane-history">
+
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span>📋 All Readings</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select class="form-control" style="width:auto;padding:6px 10px;font-size:0.8rem;" id="filterCat" onchange="renderHistory()">
+            <option value="">All categories</option>
+            <option>Optimal</option>
+            <option>Normal</option>
+            <option>High-Normal</option>
+            <option>Grade 1 Hypertension</option>
+            <option>Grade 2 Hypertension</option>
+            <option>Grade 3 Hypertension</option>
+          </select>
+          <button class="btn btn-secondary btn-sm no-print" onclick="exportCSV()">⬇️ CSV</button>
+        </div>
+      </div>
+
+      <div id="historyContainer">
+        <div class="empty"><div class="ei">📋</div><p>No readings yet. Log your first reading!</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ ANALYSIS TAB ══════════════ -->
+  <div class="tab-pane" id="pane-analysis">
+
+    <!-- Summary stats -->
+    <div class="card" id="analysisSummary">
+      <div class="empty"><div class="ei">📊</div><p>Log readings to see your analysis.</p></div>
+    </div>
+
+    <!-- BP Trend Chart -->
+    <div class="card" id="chartCard" style="display:none;">
+      <div class="card-title">📈 Blood Pressure Trend</div>
+      <div class="chart-box"><canvas id="bpChart"></canvas></div>
+    </div>
+
+    <!-- Pulse Chart -->
+    <div class="card" id="pulseChartCard" style="display:none;">
+      <div class="card-title">💓 Pulse Rate Trend</div>
+      <div class="chart-box"><canvas id="pulseChart"></canvas></div>
+    </div>
+
+    <!-- Category distribution -->
+    <div class="card" id="distCard" style="display:none;">
+      <div class="card-title">🥧 Reading Distribution</div>
+      <div style="max-width:300px;margin:0 auto;">
+        <div class="chart-box"><canvas id="distChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 7-day protocol -->
+    <div class="card" id="protocolCard" style="display:none;">
+      <div class="card-title">📅 BIHS 7-Day Home Monitoring Protocol</div>
+      <div class="alert alert-info" style="font-size:0.78rem;margin-bottom:12px;">
+        Measure twice daily (morning &amp; evening) for 7 consecutive days. Discard Day 1 readings. Average the remaining readings (Days 2–7). A home average ≥135/85 mmHg indicates hypertension.
+      </div>
+      <div id="protocolContent"></div>
+    </div>
+
+    <!-- BHS full table -->
+    <div class="card">
+      <div class="card-title">📘 British Hypertension Society — Classification Table</div>
+      <div class="table-wrap">
+        <table class="guide-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Systolic (mmHg)</th>
+              <th>Diastolic (mmHg)</th>
+              <th>Home BP threshold</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="color:#15803d">Optimal</td><td>&lt; 120</td><td>&lt; 80</td><td>—</td></tr>
+            <tr><td style="color:#16a34a">Normal</td><td>120–129</td><td>80–84</td><td>—</td></tr>
+            <tr><td style="color:#b45309">High-Normal</td><td>130–139</td><td>85–89</td><td>&lt; 135/85 (normal)</td></tr>
+            <tr><td style="color:#c2410c">Grade 1 HTN</td><td>140–159</td><td>90–99</td><td>≥ 135/85</td></tr>
+            <tr><td style="color:#b91c1c">Grade 2 HTN</td><td>160–179</td><td>100–109</td><td>≥ 150/95</td></tr>
+            <tr><td style="color:#7c3aed">Grade 3 HTN</td><td>≥ 180</td><td>≥ 110</td><td>≥ 180/110</td></tr>
+            <tr><td style="color:#c2410c">Isolated Systolic HTN</td><td>≥ 140</td><td>&lt; 90</td><td>≥ 135 systolic</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="divider"></div>
+      <p style="font-size:0.75rem;color:var(--muted);">
+        Source: British and Irish Hypertension Society (BIHS) guidelines, 2023. When systolic and diastolic fall in different categories, the higher category applies.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════ REPORT TAB ══════════════ -->
+  <div class="tab-pane" id="pane-report">
+
+    <div class="card">
+      <div class="card-title">📧 GP Report</div>
+
+      <div id="reportGPDetails" class="alert alert-warn" style="display:none;">
+        ⚠️ GP details not set. <button class="btn btn-sm btn-secondary" style="margin-left:8px;" onclick="openSettings()">Set GP details</button>
+      </div>
+      <div id="reportGPInfo" style="display:none;margin-bottom:14px;font-size:0.85rem;"></div>
+
+      <div class="form-group">
+        <label class="form-label">Report period</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input class="form-control" type="date" id="reportFrom" style="flex:1;">
+          <input class="form-control" type="date" id="reportTo" style="flex:1;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Additional message for GP</label>
+        <textarea class="form-control" id="gpMessage" placeholder="Any additional context for your GP…" style="min-height:64px;"></textarea>
+      </div>
+
+      <button class="btn btn-secondary btn-block" style="margin-bottom:10px;" onclick="generateReport()">
+        🔍 Generate Report Preview
+      </button>
+
+      <div id="reportPreviewArea" style="display:none;">
+        <div class="card-title" style="margin-top:4px;">Preview</div>
+        <div class="report-preview" id="reportText"></div>
+        <div class="divider"></div>
+        <div class="btn-group" style="margin-top:4px;">
+          <button class="btn btn-secondary btn-sm" onclick="copyReport()">📋 Copy Report</button>
+          <button class="btn btn-primary btn-sm" onclick="emailReport()">📧 Email to GP</button>
+          <button class="btn btn-secondary btn-sm" onclick="printReport()">🖨️ Print / PDF</button>
+        </div>
+        <div class="alert alert-info" style="margin-top:12px;font-size:0.78rem;">
+          <strong>How to email:</strong> Click "Copy Report" then "Email to GP". Your email app will open — paste the report into the body. Alternatively, use "Print / PDF" to save as PDF and attach it.
+        </div>
+      </div>
+    </div>
+
+    <!-- Patient summary for printing -->
+    <div class="card" id="printSummaryCard" style="display:none;">
+      <div class="card-title">Patient Summary</div>
+      <div id="printSummaryContent"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══════════ SETTINGS MODAL ══════════ -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSettings()">✕</button>
+    <div class="modal-title">⚙️ Settings</div>
+
+    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;">Your data stays on this device and is never sent anywhere without your action.</p>
+
+    <div class="card-title" style="font-size:0.8rem;margin-bottom:10px;">Patient Details</div>
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input class="form-control" id="sPatientName" placeholder="e.g. Jane Smith">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date of Birth</label>
+      <input class="form-control" type="date" id="sDob">
+    </div>
+    <div class="form-group">
+      <label class="form-label">NHS Number (optional)</label>
+      <input class="form-control" id="sNhs" placeholder="e.g. 943 476 5919" inputmode="numeric">
+    </div>
+
+    <div class="divider"></div>
+    <div class="card-title" style="font-size:0.8rem;margin-bottom:10px;">GP / Surgery Details</div>
+
+    <!-- NHS ODS live search -->
+    <div class="form-group">
+      <label class="form-label">🔍 Search GP Surgery (England)</label>
+      <div class="gp-search-wrap">
+        <input class="form-control" id="gpSearchInput"
+          placeholder="Type surgery name or postcode (e.g. SW1A 1AA)…"
+          autocomplete="off" autocorrect="off" spellcheck="false"
+          oninput="onGPSearchInput(this.value)">
+        <div id="gpDropdown" class="gp-dropdown"></div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">
+        Searches NHS Organisation Data Service — all ~6,500 active GP practices in England.
+      </div>
+    </div>
+
+    <!-- populated from ODS -->
+    <div id="gpSelectedInfo" style="display:none;">
+      <div class="gp-filled-badge" id="gpSelectedBadge">✅ <span id="gpSelectedName"></span></div>
+      <a id="gpNhsLink" class="gp-nhs-link" href="#" target="_blank" rel="noopener noreferrer">
+        🏥 View practice on NHS.uk — find their contact email here ↗
+      </a>
+      <input type="hidden" id="sOdsCode">
+    </div>
+
+    <div class="form-group" style="margin-top:12px;">
+      <label class="form-label">GP Name</label>
+      <input class="form-control" id="sGpName" placeholder="e.g. Dr. A. Patel">
+    </div>
+    <div class="form-group">
+      <label class="form-label">GP / Surgery Email <span style="color:#b91c1c;font-size:0.8em;">(enter manually from NHS.uk)</span></label>
+      <input class="form-control" type="email" id="sGpEmail" placeholder="surgery@nhs.net" inputmode="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Surgery Name</label>
+      <input class="form-control" id="sSurgery" placeholder="e.g. Riverside Medical Centre">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Surgery Address</label>
+      <textarea class="form-control" id="sSurgeryAddress" placeholder="Auto-filled from NHS search" style="min-height:60px;font-size:0.85rem;"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Surgery Phone</label>
+      <input class="form-control" id="sSurgeryPhone" placeholder="Auto-filled from NHS search" type="tel" inputmode="tel">
+    </div>
+
+    <div class="divider"></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+      <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-secondary btn-sm" style="color:#b91c1c;" onclick="confirmClearData()">🗑️ Clear All Data</button>
+  </div>
+</div>
+
+<!-- EDIT READING MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeEdit()">✕</button>
+    <div class="modal-title">✏️ Edit Reading</div>
+    <input type="hidden" id="editId">
+    <div class="form-row">
+      <div class="bp-label-group">
+        <label class="form-label">Systolic</label>
+        <input class="form-control bp-input" type="number" id="editSys" min="60" max="300" inputmode="numeric">
+        <div class="bp-unit">mmHg</div>
+      </div>
+      <div class="bp-label-group">
+        <label class="form-label">Diastolic</label>
+        <input class="form-control bp-input" type="number" id="editDia" min="30" max="200" inputmode="numeric">
+        <div class="bp-unit">mmHg</div>
+      </div>
+      <div class="bp-label-group">
+        <label class="form-label">Pulse</label>
+        <input class="form-control bp-input" type="number" id="editPulse" min="30" max="250" inputmode="numeric">
+        <div class="bp-unit">bpm</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date &amp; Time</label>
+      <div style="display:flex;gap:8px;">
+        <input class="form-control" type="date" id="editDate" style="flex:1;">
+        <input class="form-control" type="time" id="editTime" style="flex:1;">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea class="form-control" id="editNotes"></textarea>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="saveEdit()">💾 Save Changes</button>
+      <button class="btn btn-secondary" onclick="closeEdit()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA LAYER
+// ═══════════════════════════════════════════════
+const STORE_KEY = 'bp_readings_v2';
+const SETTINGS_KEY = 'bp_settings_v2';
+
+function getReadings() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+  catch { return []; }
+}
+function saveReadings(arr) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(arr));
+}
+function getSettings() {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveSettingsData(obj) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(obj));
+}
+
+// ═══════════════════════════════════════════════
+//  BHS CLASSIFICATION
+// ═══════════════════════════════════════════════
+function classifyBP(sys, dia) {
+  const cats = [
+    null,
+    { name:'Optimal',             color:'#15803d', bg:'#dcfce7', grade:1,
+      advice:'Your blood pressure is optimal. Maintain your healthy lifestyle.' },
+    { name:'Normal',              color:'#16a34a', bg:'#f0fdf4', grade:2,
+      advice:'Your blood pressure is normal. Keep up the healthy habits.' },
+    { name:'High-Normal',         color:'#b45309', bg:'#fefce8', grade:3,
+      advice:'Your blood pressure is high-normal. Lifestyle modifications are recommended (reduce salt, increase exercise, limit alcohol). Monitor regularly.' },
+    { name:'Grade 1 Hypertension',color:'#c2410c', bg:'#fff7ed', grade:4,
+      advice:'Mild hypertension detected. Please consult your GP. Lifestyle changes are essential. Drug treatment may be required depending on cardiovascular risk.' },
+    { name:'Grade 2 Hypertension',color:'#b91c1c', bg:'#fef2f2', grade:5,
+      advice:'Moderate hypertension detected. Please consult your GP promptly. Drug treatment is usually indicated alongside lifestyle changes.' },
+    { name:'Grade 3 Hypertension',color:'#7c3aed', bg:'#faf5ff', grade:6,
+      advice:'Severe hypertension detected. Seek urgent medical attention. Immediate drug treatment is required.' },
+  ];
+
+  let sGrade, dGrade;
+  if (sys >= 180) sGrade = 6;
+  else if (sys >= 160) sGrade = 5;
+  else if (sys >= 140) sGrade = 4;
+  else if (sys >= 130) sGrade = 3;
+  else if (sys >= 120) sGrade = 2;
+  else sGrade = 1;
+
+  if (dia >= 110) dGrade = 6;
+  else if (dia >= 100) dGrade = 5;
+  else if (dia >= 90) dGrade = 4;
+  else if (dia >= 85) dGrade = 3;
+  else if (dia >= 80) dGrade = 2;
+  else dGrade = 1;
+
+  const grade = Math.max(sGrade, dGrade);
+  const cat = { ...cats[grade] };
+
+  // Isolated systolic hypertension
+  if (sGrade >= 4 && dGrade < 4) {
+    cat.ish = true;
+    cat.advice = 'Isolated Systolic Hypertension detected — elevated systolic with normal diastolic. ' + cat.advice;
+  }
+
+  // Home BP flag (≥135/85 = hypertension by home monitoring)
+  cat.homeHtn = (sys >= 135 || dia >= 85) && grade >= 3;
+
+  return cat;
+}
+
+function classifyPulse(bpm) {
+  if (bpm < 60) return { label: 'Bradycardia', color: '#2563eb' };
+  if (bpm <= 100) return { label: 'Normal', color: '#15803d' };
+  return { label: 'Tachycardia', color: '#b91c1c' };
+}
+
+// ═══════════════════════════════════════════════
+//  UTILITY
+// ═══════════════════════════════════════════════
+function mean(arr) { return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function stddev(arr) {
+  const m = mean(arr);
+  return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length);
+}
+function fmtDate(iso, short=false) {
+  const d = new Date(iso);
+  if (short) return d.toLocaleDateString('en-GB', {day:'2-digit',month:'short'});
+  return d.toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function showToast(msg, dur=2600) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+let activeTab = 'log';
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn,.desk-nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pane-'+tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+  // sync both navs
+  const mob = document.getElementById('btn-'+tab);
+  if (mob) mob.classList.add('active');
+  document.querySelectorAll('.desk-nav-btn').forEach(b=>{
+    if (b.textContent.toLowerCase().includes(tab.substring(0,3))) b.classList.add('active');
+  });
+  activeTab = tab;
+  if (tab === 'history') renderHistory();
+  if (tab === 'analysis') renderAnalysis();
+  if (tab === 'report') renderReport();
+}
+
+// ═══════════════════════════════════════════════
+//  LOG TAB
+// ═══════════════════════════════════════════════
+// Live preview
+['sys','dia','pulse'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', updatePreview);
+});
+
+function updatePreview() {
+  const sys = parseInt(document.getElementById('sys').value);
+  const dia = parseInt(document.getElementById('dia').value);
+  const el = document.getElementById('previewBadge');
+  const alert = document.getElementById('previewAlert');
+  if (!sys || !dia || sys < 60 || dia < 30) { el.style.display='none'; return; }
+  const cat = classifyBP(sys, dia);
+  el.style.display='block';
+  alert.className = 'alert';
+  alert.style.background = cat.bg;
+  alert.style.color = cat.color;
+  alert.style.border = `1px solid ${cat.color}44`;
+  alert.innerHTML = `<strong>${cat.name}</strong>${cat.ish?' (Isolated Systolic)':''} — ${cat.advice}`;
+}
+
+function saveReading() {
+  const sys = parseInt(document.getElementById('sys').value);
+  const dia = parseInt(document.getElementById('dia').value);
+  const pulseRaw = document.getElementById('pulse').value;
+  const pulse = pulseRaw !== '' ? parseInt(pulseRaw) : null;
+  const dateVal = document.getElementById('readingDate').value;
+  const timeVal = document.getElementById('readingTime').value;
+  const notes = document.getElementById('notes').value.trim();
+
+  if (!sys || !dia) { showToast('⚠️ Please enter systolic and diastolic.'); return; }
+  if (sys < 60 || sys > 300) { showToast('⚠️ Systolic must be between 60–300 mmHg.'); return; }
+  if (dia < 30 || dia > 200) { showToast('⚠️ Diastolic must be between 30–200 mmHg.'); return; }
+  if (pulse !== null && (pulse < 30 || pulse > 250)) { showToast('⚠️ Pulse must be between 30–250 bpm.'); return; }
+  if (sys <= dia) { showToast('⚠️ Systolic must be greater than diastolic.'); return; }
+
+  let date;
+  if (dateVal) {
+    date = new Date(dateVal + 'T' + (timeVal || '00:00')).toISOString();
+  } else {
+    date = new Date().toISOString();
+  }
+  const cat = classifyBP(sys, dia);
+
+  const reading = { id: uid(), date, sys, dia, pulse, notes, category: cat.name };
+  const readings = getReadings();
+  readings.push(reading);
+  readings.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  saveReadings(readings);
+
+  // Reset form
+  document.getElementById('sys').value='';
+  document.getElementById('dia').value='';
+  document.getElementById('pulse').value='';
+  document.getElementById('notes').value='';
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('readingDate').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  document.getElementById('readingTime').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  document.getElementById('previewBadge').style.display='none';
+
+  showToast(`✅ Saved — ${cat.name}`);
+}
+
+// ═══════════════════════════════════════════════
+//  HISTORY TAB
+// ═══════════════════════════════════════════════
+function renderHistory() {
+  const readings = getReadings();
+  const filterCat = document.getElementById('filterCat').value;
+  const container = document.getElementById('historyContainer');
+
+  const filtered = filterCat ? readings.filter(r=>r.category===filterCat) : readings;
+  const sorted = [...filtered].sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  if (!sorted.length) {
+    container.innerHTML = '<div class="empty"><div class="ei">📋</div><p>No readings found.</p></div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date &amp; Time</th>
+            <th>Systolic</th>
+            <th>Diastolic</th>
+            <th>Pulse</th>
+            <th>Category</th>
+            <th class="hide-xs">Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>`;
+
+  const tbody = document.getElementById('historyBody');
+  sorted.forEach(r => {
+    const cat = classifyBP(r.sys, r.dia);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="white-space:nowrap;font-size:0.8rem;">${fmtDate(r.date)}</td>
+      <td><strong style="font-size:1rem;">${r.sys}</strong></td>
+      <td><strong style="font-size:1rem;">${r.dia}</strong></td>
+      <td>${r.pulse != null ? r.pulse : '—'}</td>
+      <td><span class="badge" style="background:${cat.color}">${cat.name}${cat.ish?' (ISH)':''}</span></td>
+      <td class="hide-xs" style="font-size:0.78rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(r.notes||'')}">${escHtml(r.notes||'—')}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn-edit-sm" onclick="openEdit('${r.id}')">✏️</button>
+        <button class="btn-danger-sm" onclick="deleteReading('${r.id}')">🗑️</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function deleteReading(id) {
+  if (!confirm('Delete this reading?')) return;
+  const readings = getReadings().filter(r=>r.id!==id);
+  saveReadings(readings);
+  renderHistory();
+  showToast('🗑️ Reading deleted.');
+}
+
+function openEdit(id) {
+  const r = getReadings().find(r=>r.id===id);
+  if (!r) return;
+  document.getElementById('editId').value = r.id;
+  document.getElementById('editSys').value = r.sys;
+  document.getElementById('editDia').value = r.dia;
+  document.getElementById('editPulse').value = r.pulse != null ? r.pulse : '';
+  document.getElementById('editDate').value = r.date.slice(0,10);
+  document.getElementById('editTime').value = r.date.slice(11,16);
+  document.getElementById('editNotes').value = r.notes || '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEdit() {
+  document.getElementById('editModal').classList.remove('open');
+}
+
+function saveEdit() {
+  const id = document.getElementById('editId').value;
+  const sys = parseInt(document.getElementById('editSys').value);
+  const dia = parseInt(document.getElementById('editDia').value);
+  const pulseRaw = document.getElementById('editPulse').value;
+  const pulse = pulseRaw !== '' ? parseInt(pulseRaw) : null;
+  const dateVal = document.getElementById('editDate').value;
+  const timeVal = document.getElementById('editTime').value;
+  const notes = document.getElementById('editNotes').value.trim();
+
+  if (!sys||!dia||sys<=dia) { showToast('⚠️ Please check your values.'); return; }
+
+  const date = dateVal ? new Date(dateVal + 'T' + (timeVal || '00:00')).toISOString() : new Date().toISOString();
+  const cat = classifyBP(sys, dia);
+  const readings = getReadings().map(r=>
+    r.id===id ? {...r, sys, dia, pulse, date, notes, category:cat.name} : r
+  );
+  saveReadings(readings);
+  closeEdit();
+  renderHistory();
+  showToast('✅ Reading updated.');
+}
+
+// ═══════════════════════════════════════════════
+//  ANALYSIS TAB
+// ═══════════════════════════════════════════════
+let bpChartInst=null, pulseChartInst=null, distChartInst=null;
+
+function renderAnalysis() {
+  const readings = getReadings();
+  const summary = document.getElementById('analysisSummary');
+
+  if (readings.length === 0) {
+    summary.innerHTML = '<div class="empty"><div class="ei">📊</div><p>Log readings to see your analysis.</p></div>';
+    ['chartCard','pulseChartCard','distCard','protocolCard'].forEach(id=>document.getElementById(id).style.display='none');
+    return;
+  }
+
+  const sysList = readings.map(r=>r.sys);
+  const diaList = readings.map(r=>r.dia);
+  const pulseList = readings.map(r=>r.pulse).filter(p=>p!=null);
+
+  const avgSys = Math.round(mean(sysList));
+  const avgDia = Math.round(mean(diaList));
+  const avgPulse = pulseList.length ? Math.round(mean(pulseList)) : null;
+  const avgCat = classifyBP(avgSys, avgDia);
+
+  // Summary card
+  summary.innerHTML = `
+    <div class="card-title">📊 Summary — ${readings.length} Reading${readings.length!==1?'s':''}</div>
+    <div class="stats-grid" style="margin-bottom:14px;">
+      <div class="stat-card">
+        <div class="stat-val">${avgSys}</div>
+        <div class="stat-lbl">Avg Systolic</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${avgDia}</div>
+        <div class="stat-lbl">Avg Diastolic</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${avgPulse != null ? avgPulse : '—'}</div>
+        <div class="stat-lbl">Avg Pulse</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="font-size:1.5rem;">${readings.length}</div>
+        <div class="stat-lbl">Total Readings</div>
+      </div>
+    </div>
+    <div class="alert" style="background:${avgCat.bg};color:${avgCat.color};border:1px solid ${avgCat.color}44;margin-bottom:14px;">
+      <strong>Overall Classification: ${avgCat.name}${avgCat.ish?' (Isolated Systolic)':''}</strong>
+      <div style="margin-top:5px;font-size:0.82rem;">${avgCat.advice}</div>
+      ${(avgSys>=135||avgDia>=85)?'<div style="margin-top:6px;font-size:0.8rem;font-weight:700;">⚠️ Home BP average ≥135/85 mmHg — consistent with hypertension by home monitoring criteria.</div>':''}
+    </div>
+    <div class="table-wrap">
+      <table class="guide-table">
+        <thead><tr><th>Metric</th><th>Average</th><th>Min</th><th>Max</th><th>Std Dev</th></tr></thead>
+        <tbody>
+          <tr><td>Systolic (mmHg)</td><td><strong>${avgSys}</strong></td><td>${Math.min(...sysList)}</td><td>${Math.max(...sysList)}</td><td>${stddev(sysList).toFixed(1)}</td></tr>
+          <tr><td>Diastolic (mmHg)</td><td><strong>${avgDia}</strong></td><td>${Math.min(...diaList)}</td><td>${Math.max(...diaList)}</td><td>${stddev(diaList).toFixed(1)}</td></tr>
+          ${pulseList.length ? `<tr><td>Pulse (bpm)</td><td><strong>${avgPulse}</strong></td><td>${Math.min(...pulseList)}</td><td>${Math.max(...pulseList)}</td><td>${stddev(pulseList).toFixed(1)}</td></tr>` : ''}
+        </tbody>
+      </table>
+    </div>`;
+
+  // Show chart cards
+  document.getElementById('chartCard').style.display='block';
+  document.getElementById('pulseChartCard').style.display = pulseList.length ? 'block' : 'none';
+  document.getElementById('distCard').style.display='block';
+  document.getElementById('protocolCard').style.display='block';
+
+  // BP Trend chart
+  const labels = readings.map(r=>fmtDate(r.date, true));
+  if (bpChartInst) bpChartInst.destroy();
+  const bpCtx = document.getElementById('bpChart').getContext('2d');
+  bpChartInst = new Chart(bpCtx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Systolic', data: sysList,
+          borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.08)',
+          fill: false, tension: 0.3, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2,
+        },
+        {
+          label: 'Diastolic', data: diaList,
+          borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.08)',
+          fill: false, tension: 0.3, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2,
+        },
+        {
+          label: 'HTN threshold (sys 135)', data: readings.map(()=>135),
+          borderColor: '#b45309', borderDash: [5,4], borderWidth: 1.5,
+          pointRadius: 0, fill: false,
+        },
+        {
+          label: 'HTN threshold (dia 85)', data: readings.map(()=>85),
+          borderColor: '#b45309', borderDash: [5,4], borderWidth: 1.5,
+          pointRadius: 0, fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        y: { title: { display: true, text: 'mmHg', font: { size: 11 } },
+             min: Math.max(40, Math.min(...diaList)-15) },
+        x: { ticks: { maxTicksLimit: 8, maxRotation: 40, font: { size: 10 } } },
+      },
+    },
+  });
+
+  // Pulse chart (only when pulse data exists)
+  if (pulseChartInst) { pulseChartInst.destroy(); pulseChartInst = null; }
+  if (pulseList.length) {
+    const pulseReadings = readings.filter(r=>r.pulse!=null);
+    const pulseLabels = pulseReadings.map(r=>fmtDate(r.date, true));
+    const pCtx = document.getElementById('pulseChart').getContext('2d');
+    pulseChartInst = new Chart(pCtx, {
+      type: 'line',
+      data: {
+        labels: pulseLabels,
+        datasets: [
+          {
+            label: 'Pulse (bpm)', data: pulseList,
+            borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.08)',
+            fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2,
+          },
+          { label: 'Bradycardia (<60)', data: pulseReadings.map(()=>60),
+            borderColor:'#2563eb', borderDash:[4,4], borderWidth:1.2, pointRadius:0, fill:false },
+          { label: 'Tachycardia (>100)', data: pulseReadings.map(()=>100),
+            borderColor:'#b91c1c', borderDash:[4,4], borderWidth:1.2, pointRadius:0, fill:false },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          y: { title: { display: true, text: 'bpm', font: { size: 11 } },
+               min: Math.max(20, Math.min(...pulseList)-10) },
+          x: { ticks: { maxTicksLimit: 8, maxRotation: 40, font: { size: 10 } } },
+        },
+      },
+    });
+  }
+
+  // Distribution doughnut
+  const catCounts = {};
+  readings.forEach(r=>{ catCounts[r.category]=(catCounts[r.category]||0)+1; });
+  const catColors = {
+    'Optimal':'#15803d','Normal':'#16a34a','High-Normal':'#b45309',
+    'Grade 1 Hypertension':'#c2410c','Grade 2 Hypertension':'#b91c1c','Grade 3 Hypertension':'#7c3aed',
+  };
+  const catKeys = Object.keys(catCounts);
+  if (distChartInst) distChartInst.destroy();
+  const dCtx = document.getElementById('distChart').getContext('2d');
+  distChartInst = new Chart(dCtx, {
+    type: 'doughnut',
+    data: {
+      labels: catKeys,
+      datasets: [{ data: catKeys.map(k=>catCounts[k]), backgroundColor: catKeys.map(k=>catColors[k]||'#888'), borderWidth: 2 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+    },
+  });
+
+  // 7-day protocol
+  render7Day(readings);
+}
+
+function render7Day(readings) {
+  const container = document.getElementById('protocolContent');
+  if (!readings.length) { container.innerHTML=''; return; }
+
+  // Group by date
+  const byDay = {};
+  readings.forEach(r=>{
+    const day = r.date.slice(0,10);
+    if (!byDay[day]) byDay[day]=[];
+    byDay[day].push(r);
+  });
+  const days = Object.keys(byDay).sort();
+
+  if (days.length < 2) {
+    container.innerHTML='<div class="alert alert-info" style="font-size:0.78rem;">Need at least 2 days of readings for protocol analysis. Day 1 is discarded; continue recording for accurate 7-day results.</div>';
+    return;
+  }
+
+  // Discard day 1
+  const analysedDays = days.slice(1, 7); // days 2-7 (up to 6 days)
+  const protocolReadings = analysedDays.flatMap(d=>byDay[d]);
+
+  if (!protocolReadings.length) {
+    container.innerHTML='<div class="alert alert-info">No readings to analyse after discarding Day 1.</div>';
+    return;
+  }
+
+  const pSys = Math.round(mean(protocolReadings.map(r=>r.sys)));
+  const pDia = Math.round(mean(protocolReadings.map(r=>r.dia)));
+  const pCat = classifyBP(pSys, pDia);
+  const homeHtn = pSys >= 135 || pDia >= 85;
+
+  container.innerHTML = `
+    <div class="table-wrap" style="margin-bottom:12px;">
+      <table class="guide-table">
+        <thead>
+          <tr><th>Day</th><th>Date</th><th>Readings</th><th>Avg Sys</th><th>Avg Dia</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          ${days.slice(0,7).map((d,i)=>{
+            const rs=byDay[d];
+            const aSys=Math.round(mean(rs.map(r=>r.sys)));
+            const aDia=Math.round(mean(rs.map(r=>r.dia)));
+            const cat=classifyBP(aSys,aDia);
+            return `<tr style="${i===0?'opacity:0.45;text-decoration:line-through;':''}">
+              <td>Day ${i+1}${i===0?' <em>(discarded)</em>':''}</td>
+              <td style="white-space:nowrap;">${new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</td>
+              <td>${rs.length}</td>
+              <td>${aSys}</td>
+              <td>${aDia}</td>
+              <td><span class="badge" style="background:${cat.color};font-size:0.68rem;">${cat.name}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="alert ${homeHtn?'alert-danger':'alert-ok'}">
+      <strong>Protocol Result (Days 2–${Math.min(days.length,7)}):</strong>
+      Average ${pSys}/${pDia} mmHg — <strong>${pCat.name}</strong>.
+      ${homeHtn
+        ? ' ⚠️ Home BP average meets the BIHS threshold for hypertension (≥135/85 mmHg). Please consult your GP.'
+        : ' ✅ Home BP average is within normal range (<135/85 mmHg).'}
+    </div>
+    <div style="font-size:0.75rem;color:var(--muted);">
+      Based on ${protocolReadings.length} reading${protocolReadings.length!==1?'s':''} across ${analysedDays.length} day${analysedDays.length!==1?'s':''}
+      (${days.length >= 7 ? 'complete' : days.length - 1 + ' of 6 required days recorded'}).
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  REPORT TAB
+// ═══════════════════════════════════════════════
+let lastReportText = '';
+
+function renderReport() {
+  const s = getSettings();
+  const gpInfoEl = document.getElementById('reportGPInfo');
+  const gpWarnEl = document.getElementById('reportGPDetails');
+
+  if (s.gpEmail) {
+    gpWarnEl.style.display='none';
+    gpInfoEl.style.display='block';
+    gpInfoEl.innerHTML=`<strong>GP:</strong> ${s.gpName||'Unknown'} — ${s.gpEmail}<br><strong>Surgery:</strong> ${s.surgery||'—'}${s.surgeryPhone?' &nbsp;·&nbsp; '+s.surgeryPhone:''}${s.odsCode?' &nbsp;·&nbsp; ODS: '+s.odsCode:''}`;
+  } else {
+    gpWarnEl.style.display='block';
+    gpInfoEl.style.display='none';
+  }
+
+  // Default date range
+  const readings = getReadings();
+  if (readings.length) {
+    const sorted = [...readings].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    document.getElementById('reportFrom').value = sorted[0].date.slice(0,10);
+    document.getElementById('reportTo').value = sorted[sorted.length-1].date.slice(0,10);
+  }
+}
+
+function generateReport() {
+  const readings = getReadings();
+  const s = getSettings();
+  const from = document.getElementById('reportFrom').value;
+  const to = document.getElementById('reportTo').value;
+  const gpMsg = document.getElementById('gpMessage').value.trim();
+
+  const filtered = readings.filter(r=>{
+    const d = r.date.slice(0,10);
+    return (!from || d>=from) && (!to || d<=to);
+  }).sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  if (!filtered.length) { showToast('⚠️ No readings in selected date range.'); return; }
+
+  const sysList = filtered.map(r=>r.sys);
+  const diaList = filtered.map(r=>r.dia);
+  const pulseList = filtered.map(r=>r.pulse).filter(p=>p!=null);
+  const avgSys = Math.round(mean(sysList));
+  const avgDia = Math.round(mean(diaList));
+  const avgCat = classifyBP(avgSys, avgDia);
+  const homeHtn = avgSys>=135 || avgDia>=85;
+
+  const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const dob = s.dob ? new Date(s.dob).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+
+  const lines = [];
+  const hr = '─'.repeat(50);
+
+  lines.push('BLOOD PRESSURE MONITORING REPORT');
+  lines.push('Prepared using BP Logger (British Hypertension Society Guidelines)');
+  lines.push(hr);
+  lines.push('');
+  lines.push('PATIENT DETAILS');
+  lines.push(`  Name:        ${s.patientName||'Not provided'}`);
+  lines.push(`  Date of Birth: ${dob}`);
+  lines.push(`  NHS Number:  ${s.nhs||'—'}`);
+  lines.push(`  Report Date: ${now}`);
+  lines.push('');
+  lines.push('ADDRESSED TO');
+  lines.push(`  GP:          ${s.gpName||'—'}`);
+  lines.push(`  Surgery:     ${s.surgery||'—'}`);
+  if (s.surgeryAddress) {
+    s.surgeryAddress.split('\n').forEach((l,i) => lines.push(`  ${i===0?'Address:    ':'            '} ${l}`));
+  }
+  if (s.surgeryPhone) lines.push(`  Phone:       ${s.surgeryPhone}`);
+  if (s.odsCode)      lines.push(`  ODS Code:    ${s.odsCode}`);
+  lines.push('');
+  lines.push(hr);
+  lines.push('SUMMARY');
+  lines.push(hr);
+  lines.push(`  Period:         ${from||filtered[0].date.slice(0,10)} to ${to||filtered[filtered.length-1].date.slice(0,10)}`);
+  lines.push(`  Total Readings: ${filtered.length}`);
+  lines.push('');
+  lines.push(`  AVERAGE BLOOD PRESSURE: ${avgSys}/${avgDia} mmHg`);
+  if (pulseList.length) lines.push(`  AVERAGE PULSE:          ${Math.round(mean(pulseList))} bpm`);
+  lines.push('');
+  lines.push(`  Systolic  — Average: ${avgSys}, Min: ${Math.min(...sysList)}, Max: ${Math.max(...sysList)}, SD: ${stddev(sysList).toFixed(1)}`);
+  lines.push(`  Diastolic — Average: ${avgDia}, Min: ${Math.min(...diaList)}, Max: ${Math.max(...diaList)}, SD: ${stddev(diaList).toFixed(1)}`);
+  if (pulseList.length) lines.push(`  Pulse     — Average: ${Math.round(mean(pulseList))}, Min: ${Math.min(...pulseList)}, Max: ${Math.max(...pulseList)}, SD: ${stddev(pulseList).toFixed(1)}`);
+  lines.push('');
+  lines.push(hr);
+  lines.push('BHS CLASSIFICATION');
+  lines.push(hr);
+  lines.push(`  Overall Category: ${avgCat.name}${avgCat.ish?' (Isolated Systolic Hypertension)':''}`);
+  lines.push(`  Home Monitoring:  ${homeHtn?'≥135/85 mmHg — consistent with hypertension':'<135/85 mmHg — within normal range'}`);
+  lines.push('');
+  lines.push(`  Clinical Note: ${avgCat.advice}`);
+  lines.push('');
+
+  // Category breakdown
+  const catCounts={};
+  filtered.forEach(r=>{ catCounts[r.category]=(catCounts[r.category]||0)+1; });
+  lines.push('  Reading breakdown by category:');
+  Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).forEach(([cat,n])=>{
+    lines.push(`    ${cat}: ${n} reading${n!==1?'s':''} (${Math.round(100*n/filtered.length)}%)`);
+  });
+  lines.push('');
+
+  if (gpMsg) {
+    lines.push(hr);
+    lines.push('MESSAGE FROM PATIENT');
+    lines.push(hr);
+    lines.push(gpMsg);
+    lines.push('');
+  }
+
+  lines.push(hr);
+  lines.push('COMPLETE READING LOG');
+  lines.push(hr);
+  lines.push(`${'Date & Time'.padEnd(20)} ${'Sys'.padEnd(6)} ${'Dia'.padEnd(6)} ${'Pulse'.padEnd(7)} ${'Category'.padEnd(25)} Notes`);
+  lines.push('─'.repeat(90));
+  filtered.forEach(r=>{
+    const dt = new Date(r.date).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    lines.push(`${dt.padEnd(20)} ${String(r.sys).padEnd(6)} ${String(r.dia).padEnd(6)} ${(r.pulse!=null?String(r.pulse):'—').padEnd(7)} ${r.category.padEnd(25)} ${r.notes||''}`);
+  });
+
+  lines.push('');
+  lines.push(hr);
+  lines.push('BIHS REFERENCE');
+  lines.push(hr);
+  lines.push('  Category          | Clinic BP      | Home BP');
+  lines.push('  Optimal           | <120 / <80     | —');
+  lines.push('  Normal            | 120–129/80–84  | —');
+  lines.push('  High-Normal       | 130–139/85–89  | <135/85 (normal)');
+  lines.push('  Grade 1 HTN       | 140–159/90–99  | ≥135/85');
+  lines.push('  Grade 2 HTN       | 160–179/100–109| ≥150/95');
+  lines.push('  Grade 3 HTN       | ≥180/≥110      | ≥180/110');
+  lines.push('');
+  lines.push('  Source: British and Irish Hypertension Society (BIHS), 2023 guidelines.');
+  lines.push('  This report was generated by BP Logger and is provided for informational');
+  lines.push('  purposes only. It does not constitute medical advice.');
+  lines.push(hr);
+
+  lastReportText = lines.join('\n');
+
+  document.getElementById('reportText').textContent = lastReportText;
+  document.getElementById('reportPreviewArea').style.display='block';
+  showToast('✅ Report generated.');
+}
+
+function copyReport() {
+  if (!lastReportText) { showToast('⚠️ Generate a report first.'); return; }
+  navigator.clipboard.writeText(lastReportText).then(()=>{
+    showToast('📋 Report copied to clipboard!');
+  }).catch(()=>{
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value=lastReportText; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('📋 Copied!');
+  });
+}
+
+function emailReport() {
+  if (!lastReportText) { showToast('⚠️ Generate a report first.'); return; }
+  const s = getSettings();
+  const subject = encodeURIComponent(`Blood Pressure Report — ${s.patientName||'Patient'}`);
+  const body = encodeURIComponent(lastReportText.slice(0, 1800) + (lastReportText.length>1800?'\n\n[Report truncated — please paste full copied report]':''));
+  const to = encodeURIComponent(s.gpEmail||'');
+  window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+  setTimeout(()=>showToast('💡 Tip: Paste the full copied report if body was truncated.'), 2000);
+}
+
+function printReport() {
+  if (!lastReportText) { showToast('⚠️ Generate a report first.'); return; }
+  const s = getSettings();
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <title>BP Report</title>
+    <style>
+      body{font-family:'Courier New',monospace;font-size:10pt;padding:20mm;color:#000;}
+      h1{font-size:13pt;text-align:center;margin-bottom:4mm;}
+      pre{white-space:pre-wrap;font-size:9.5pt;line-height:1.45;}
+      @media print{body{padding:15mm;}}
+    </style></head><body>
+    <h1>Blood Pressure Report${s.patientName?' — '+s.patientName:''}</h1>
+    <pre>${escHtml(lastReportText)}</pre>
+    <script>window.onload=()=>window.print();<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// ═══════════════════════════════════════════════
+//  CSV EXPORT
+// ═══════════════════════════════════════════════
+function exportCSV() {
+  const readings = getReadings();
+  if (!readings.length) { showToast('⚠️ No readings to export.'); return; }
+  const header = ['Date','Time','Systolic_mmHg','Diastolic_mmHg','Pulse_bpm','Session','Category','Notes'];
+  const rows = readings.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(r=>{
+    const d = new Date(r.date);
+    return [
+      d.toLocaleDateString('en-GB'),
+      d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
+      r.sys, r.dia, r.pulse,
+      r.session||'',
+      r.category||'',
+      `"${(r.notes||'').replace(/"/g,'""')}"`,
+    ].join(',');
+  });
+  const csv = [header.join(','),...rows].join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`BP_readings_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('⬇️ CSV exported.');
+}
+
+// ═══════════════════════════════════════════════
+//  SETTINGS MODAL
+// ═══════════════════════════════════════════════
+function openSettings() {
+  const s = getSettings();
+  document.getElementById('sPatientName').value = s.patientName||'';
+  document.getElementById('sDob').value = s.dob||'';
+  document.getElementById('sNhs').value = s.nhs||'';
+  document.getElementById('sGpName').value = s.gpName||'';
+  document.getElementById('sGpEmail').value = s.gpEmail||'';
+  document.getElementById('sSurgery').value = s.surgery||'';
+  document.getElementById('sSurgeryAddress').value = s.surgeryAddress||'';
+  document.getElementById('sSurgeryPhone').value = s.surgeryPhone||'';
+  document.getElementById('sOdsCode').value = s.odsCode||'';
+  document.getElementById('gpSearchInput').value = '';
+  // Restore selected practice info if saved
+  if (s.odsCode && s.surgery) {
+    document.getElementById('gpSelectedName').textContent = s.surgery;
+    document.getElementById('gpSelectedInfo').style.display = 'block';
+    document.getElementById('gpNhsLink').href = buildNhsUrl(s.surgery, s.odsCode);
+  } else {
+    document.getElementById('gpSelectedInfo').style.display = 'none';
+  }
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function saveSettings() {
+  const s = {
+    patientName:    document.getElementById('sPatientName').value.trim(),
+    dob:            document.getElementById('sDob').value,
+    nhs:            document.getElementById('sNhs').value.trim(),
+    gpName:         document.getElementById('sGpName').value.trim(),
+    gpEmail:        document.getElementById('sGpEmail').value.trim(),
+    surgery:        document.getElementById('sSurgery').value.trim(),
+    surgeryAddress: document.getElementById('sSurgeryAddress').value.trim(),
+    surgeryPhone:   document.getElementById('sSurgeryPhone').value.trim(),
+    odsCode:        document.getElementById('sOdsCode').value.trim(),
+  };
+  saveSettingsData(s);
+  closeSettings();
+  showToast('✅ Settings saved.');
+}
+
+// ═══════════════════════════════════════════════
+//  NHS GP SURGERY SEARCH (NHS ODS API)
+// ═══════════════════════════════════════════════
+const ODS_BASE = 'https://directory.spineservices.nhs.uk/ORD/2-0-0';
+let gpSearchTimer = null;
+let gpAbortCtrl = null;
+
+function onGPSearchInput(val) {
+  clearTimeout(gpSearchTimer);
+  const q = val.trim();
+  if (q.length < 2) { hideGPDropdown(); return; }
+  gpSearchTimer = setTimeout(() => doGPSearch(q), 380);
+}
+
+async function doGPSearch(q) {
+  showGPStatus('Searching NHS records…');
+  if (gpAbortCtrl) gpAbortCtrl.abort();
+  gpAbortCtrl = new AbortController();
+
+  // Detect postcode pattern (one or two letters, digit(s), optional space, digits+letters)
+  const postcodeRe = /^[A-Z]{1,2}\d[\dA-Z]?\s*\d[A-Z]{2}$/i;
+  const isPostcode = postcodeRe.test(q.replace(/\s+/g,''));
+
+  const params = new URLSearchParams({
+    PrimaryRoleId: 'RO177',
+    Status: 'Active',
+    Limit: '25',
+  });
+  if (isPostcode) {
+    params.set('PostCode', q.toUpperCase().replace(/\s+/g,''));
+  } else {
+    params.set('Name', q.toUpperCase());
+  }
+
+  try {
+    const res = await fetch(`${ODS_BASE}/organisations?${params}`, {
+      signal: gpAbortCtrl.signal,
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    renderGPResults(data.Organisations || []);
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    // CORS or network failure — show helpful fallback
+    showGPStatus('⚠️ NHS search unavailable (network/CORS). Enter details manually or <a href="https://digital.nhs.uk/services/organisation-data-service" target="_blank" rel="noopener" style="color:var(--primary-mid)">browse ODS</a>.');
+  }
+}
+
+function renderGPResults(orgs) {
+  const dd = document.getElementById('gpDropdown');
+  if (!orgs.length) {
+    showGPStatus('No results found. Try a different name or postcode.');
+    return;
+  }
+  dd.innerHTML = orgs.map((o,i) => `
+    <div class="gp-result" tabindex="0"
+      onclick="selectGPResult('${escAttr(o.OrgId)}','${escAttr(o.Name)}')"
+      onkeydown="if(event.key==='Enter')selectGPResult('${escAttr(o.OrgId)}','${escAttr(o.Name)}')">
+      <div class="gp-result-name">${escHtml(titleCase(o.Name))}</div>
+      <div class="gp-result-addr">${escHtml(o.PostCode||'')} &nbsp;·&nbsp; Code: ${escHtml(o.OrgId||'')}</div>
+    </div>`).join('');
+  dd.style.display = 'block';
+}
+
+function showGPStatus(html) {
+  const dd = document.getElementById('gpDropdown');
+  dd.innerHTML = `<div class="gp-status">${html}</div>`;
+  dd.style.display = 'block';
+}
+
+function hideGPDropdown() {
+  document.getElementById('gpDropdown').style.display = 'none';
+}
+
+async function selectGPResult(orgId, nameRaw) {
+  hideGPDropdown();
+  document.getElementById('gpSearchInput').value = titleCase(nameRaw);
+  document.getElementById('sSurgery').value = titleCase(nameRaw);
+
+  // Show placeholder while fetching details
+  document.getElementById('gpSelectedName').textContent = titleCase(nameRaw) + ' — fetching details…';
+  document.getElementById('gpSelectedInfo').style.display = 'block';
+  document.getElementById('sOdsCode').value = orgId;
+
+  try {
+    const res = await fetch(`${ODS_BASE}/organisations/${orgId}`, {
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const org = data.Organisation || {};
+
+    // Address
+    const loc = org.GeoLoc?.Location || {};
+    const addrParts = [loc.AddrLn1, loc.AddrLn2, loc.AddrLn3, loc.Town, loc.County, loc.PostCode].filter(Boolean);
+    const address = addrParts.join('\n');
+
+    // Phone
+    const contacts = [].concat(org.Contacts?.Contact || []);
+    const phone = contacts.find(c => c.type === 'tel')?.value || '';
+
+    // Populate fields
+    const displayName = titleCase(org.Name || nameRaw);
+    document.getElementById('sSurgery').value = displayName;
+    document.getElementById('sSurgeryAddress').value = address;
+    if (phone) document.getElementById('sSurgeryPhone').value = phone;
+
+    // NHS.uk link
+    const nhsUrl = buildNhsUrl(org.Name || nameRaw, orgId);
+    document.getElementById('gpNhsLink').href = nhsUrl;
+    document.getElementById('gpSelectedName').textContent = displayName;
+    document.getElementById('gpSelectedInfo').style.display = 'block';
+
+    showToast('✅ Practice details loaded. Enter email from NHS.uk link.');
+  } catch {
+    document.getElementById('gpSelectedName').textContent = titleCase(nameRaw);
+    document.getElementById('gpNhsLink').href = buildNhsUrl(nameRaw, orgId);
+    showToast('⚠️ Could not fetch full details. Fill in manually.');
+  }
+}
+
+function buildNhsUrl(name, odsCode) {
+  // Best-effort NHS.uk practice page URL using ODS code
+  const slug = (name || '').toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+  return `https://www.nhs.uk/services/gp-surgery/${slug}/${odsCode}`;
+}
+
+function titleCase(str) {
+  const lower = ['OF','THE','AND','AT','IN','ON','FOR','TO','A','AN'];
+  return str.toLowerCase().replace(/\b\w+/g, (w,i) =>
+    (i > 0 && lower.includes(w.toUpperCase())) ? w : w.charAt(0).toUpperCase() + w.slice(1)
+  );
+}
+
+function escAttr(str) {
+  return (str||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.gp-search-wrap')) hideGPDropdown();
+});
+
+function confirmClearData() {
+  if (!confirm('This will permanently delete ALL your blood pressure readings. This cannot be undone. Are you sure?')) return;
+  if (!confirm('Are you absolutely sure? All readings will be lost.')) return;
+  localStorage.removeItem(STORE_KEY);
+  closeSettings();
+  renderHistory();
+  showToast('🗑️ All readings deleted.');
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+// Initialise date/time fields to current date and time
+(function() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('readingDate').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  document.getElementById('readingTime').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+})();
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay=>{
+  overlay.addEventListener('click', e=>{
+    if (e.target===overlay) {
+      overlay.classList.remove('open');
+    }
+  });
+});
+</script>
+</body>
+</html>
