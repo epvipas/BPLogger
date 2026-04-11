@@ -534,8 +534,8 @@
         <button class="btn btn-secondary" id="btnSendGP" style="flex:1;" onclick="emailReport()" disabled>📧 Send PDF to GP</button>
       </div>
       <div class="alert alert-info" style="margin-top:12px;font-size:0.78rem;">
-        <strong>Save as PDF</strong> opens the report in a new tab — choose "Save as PDF" in the print dialog to download.
-        <strong>Send PDF to GP</strong> opens your email app pre-addressed to your GP — enter a valid GP email above to enable it.
+        <strong>Save as PDF</strong> opens the report in a new tab — choose "Save as PDF" in the print dialog to download.<br>
+        <strong>Send PDF to GP</strong> opens the print dialog then your email app. Save the PDF first, then attach it to the email before sending.
       </div>
     </div>
   </div>
@@ -1422,11 +1422,20 @@ function emailReport() {
   const s = getSettings();
   const gpEmail = document.getElementById('reportGpEmail').value.trim();
   if (!isValidEmail(gpEmail)) { showToast('⚠️ Please enter a valid GP email address.'); return; }
+
+  // Open the PDF print dialog first so the user can save it
+  generatePDF();
+
   const subject = encodeURIComponent(`Blood Pressure Report — ${s.patientName||'Patient'}`);
   const body = encodeURIComponent(
-    `Dear ${s.gpName||'GP'},\n\nPlease find my blood pressure monitoring report attached as a PDF.\n\nPatient: ${s.patientName||'—'}\nDate of Birth: ${s.dob ? new Date(s.dob).toLocaleDateString('en-GB') : '—'}\nNHS Number: ${s.nhs||'—'}\n\nKind regards,\n${s.patientName||''}`
+    `Dear ${s.gpName||'GP'},\n\nPlease find my blood pressure monitoring report attached.\n\nPatient: ${s.patientName||'—'}\nDate of Birth: ${s.dob ? new Date(s.dob).toLocaleDateString('en-GB') : '—'}\nNHS Number: ${s.nhs||'—'}\n\nKind regards,\n${s.patientName||''}`
   );
-  window.location.href = `mailto:${gpEmail}?subject=${subject}&body=${body}`;
+
+  // Delay opening email client to allow the print dialog to appear first
+  setTimeout(() => {
+    window.location.href = `mailto:${gpEmail}?subject=${subject}&body=${body}`;
+    showToast('📎 Save the PDF from the print dialog, then attach it to the email.');
+  }, 1500);
 }
 
 // ═══════════════════════════════════════════════
