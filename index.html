@@ -564,12 +564,16 @@
       <input class="form-control" id="sNhs" placeholder="e.g. 943 476 5919" inputmode="numeric">
     </div>
 
-    <div class="form-group">
+    <div class="form-group" id="gpSelectGroup" style="display:none;">
+      <label class="form-label">Your Clinician</label>
+      <select class="form-control" id="sGpSelect" onchange="onGpSelectChange()"></select>
+    </div>
+    <div class="form-group" id="gpNameGroup">
       <label class="form-label">GP Name <span style="font-weight:400;font-size:0.85em;">(optional)</span></label>
       <input class="form-control" id="sGpName" placeholder="e.g. Dr A. Patel">
     </div>
     <div class="form-group">
-      <label class="form-label">GP Email <span style="font-weight:400;font-size:0.85em;">(optional)</span></label>
+      <label class="form-label">GP / Surgery Email <span style="font-weight:400;font-size:0.85em;">(optional)</span></label>
       <input class="form-control" type="email" id="sGpEmail" placeholder="e.g. practice@nhs.net">
     </div>
 
@@ -639,6 +643,28 @@
 </div>
 
 <script>
+// ╔═══════════════════════════════════════════════════════════════╗
+// ║           SURGERY CONFIGURATION                               ║
+// ║  Edit this block before sharing the link with patients.       ║
+// ║  Everything else below should be left as-is.                  ║
+// ╚═══════════════════════════════════════════════════════════════╝
+const SURGERY_CONFIG = {
+  name:    'Hounsfield Surgery',
+  address: 'Sutton-on-Trent',
+  email:   'nnicb-nn.c84660@nhs.net',
+
+  // List each clinician's name as a quoted string, separated by commas.
+  // Patients will see a dropdown to choose their clinician in Settings.
+  // Leave the array empty ( [] ) to show a free-text field instead.
+  clinicians: [
+    'Dr A. Patel',
+    'Dr B. Smith',
+    'Dr C. Jones',
+    // 'Dr D. Williams',  ← add more by copying this line and removing //
+  ],
+};
+// ════════════════════════════════════════════════════════════════
+
 // ═══════════════════════════════════════════════
 //  DATA LAYER
 // ═══════════════════════════════════════════════
@@ -1172,9 +1198,6 @@ function render7Day(readings) {
 // ═══════════════════════════════════════════════
 //  REPORT TAB
 // ═══════════════════════════════════════════════
-const SURGERY_NAME  = 'Hounsfield Surgery';
-const SURGERY_ADDR  = 'Sutton-on-Trent';
-const SURGERY_EMAIL = 'nnicb-nn.c84660@nhs.net';
 
 function renderReport() {
   const readings = getReadings();
@@ -1185,7 +1208,7 @@ function renderReport() {
   }
   const s = getSettings();
   const emailEl = document.getElementById('reportGpEmail');
-  if (emailEl && !emailEl.value && s.gpEmail) emailEl.value = s.gpEmail;
+  if (emailEl && !emailEl.value) emailEl.value = s.gpEmail || SURGERY_CONFIG.email || '';
   updateSendGPButton();
 }
 
@@ -1317,9 +1340,9 @@ function buildReportHTML() {
       <div class="sub">Prepared using BP Logger · British Hypertension Society Guidelines · ${now}</div>
     </div>
     <div class="surg">
-      <strong>${SURGERY_NAME}</strong>
-      ${SURGERY_ADDR}<br>
-      ${SURGERY_EMAIL}
+      <strong>${SURGERY_CONFIG.name}</strong>
+      ${SURGERY_CONFIG.address}<br>
+      ${SURGERY_CONFIG.email}
     </div>
   </div>
 
@@ -1507,8 +1530,24 @@ function openSettings() {
   document.getElementById('sPatientName').value = s.patientName||'';
   document.getElementById('sDob').value = s.dob||'';
   document.getElementById('sNhs').value = s.nhs||'';
-  document.getElementById('sGpName').value = s.gpName||'';
-  document.getElementById('sGpEmail').value = s.gpEmail||'';
+  document.getElementById('sGpEmail').value = s.gpEmail || SURGERY_CONFIG.email || '';
+
+  if (SURGERY_CONFIG.clinicians.length > 0) {
+    const sel = document.getElementById('sGpSelect');
+    sel.innerHTML = SURGERY_CONFIG.clinicians
+      .map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`)
+      .join('') + '<option value="">Other / Not listed…</option>';
+    const saved = s.gpName || '';
+    sel.value = SURGERY_CONFIG.clinicians.includes(saved) ? saved : '';
+    document.getElementById('sGpName').value = SURGERY_CONFIG.clinicians.includes(saved) ? '' : saved;
+    document.getElementById('gpSelectGroup').style.display = '';
+    document.getElementById('gpNameGroup').style.display = sel.value === '' ? '' : 'none';
+  } else {
+    document.getElementById('sGpName').value = s.gpName||'';
+    document.getElementById('gpSelectGroup').style.display = 'none';
+    document.getElementById('gpNameGroup').style.display = '';
+  }
+
   document.getElementById('settingsModal').classList.add('open');
 }
 
@@ -1517,17 +1556,30 @@ function closeSettings() {
 }
 
 function saveSettings() {
+  let gpName;
+  if (SURGERY_CONFIG.clinicians.length > 0) {
+    const sel = document.getElementById('sGpSelect');
+    gpName = sel.value || document.getElementById('sGpName').value.trim();
+  } else {
+    gpName = document.getElementById('sGpName').value.trim();
+  }
   const s = {
     patientName: document.getElementById('sPatientName').value.trim(),
     dob:         document.getElementById('sDob').value,
     nhs:         document.getElementById('sNhs').value.trim(),
-    gpName:      document.getElementById('sGpName').value.trim(),
+    gpName,
     gpEmail:     document.getElementById('sGpEmail').value.trim(),
   };
   saveSettingsData(s);
   closeSettings();
   updateSendGPButton();
   showToast('✅ Settings saved.');
+}
+
+function onGpSelectChange() {
+  const sel = document.getElementById('sGpSelect');
+  document.getElementById('gpNameGroup').style.display = sel.value === '' ? '' : 'none';
+  if (sel.value !== '') document.getElementById('sGpName').value = '';
 }
 
 function titleCase(str) {
