@@ -7,6 +7,32 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#1e40af">
   <title>BP Logger — Blood Pressure Monitor</title>
+  <script>
+  // ╔═══════════════════════════════════════════════════════════════╗
+  // ║           SURGERY CONFIGURATION                               ║
+  // ║  Edit this block before sharing the link with patients.       ║
+  // ║  Everything else in this file should be left as-is.           ║
+  // ╚═══════════════════════════════════════════════════════════════╝
+  const SURGERY_CONFIG = {
+    name:    'Hounsfield Surgery',
+    address: 'Sutton-on-Trent',
+    email:   'nnicb-nn.c84660@nhs.net',
+
+    // List each clinician's name as a quoted string, separated by commas.
+    // Patients will see a dropdown to choose their clinician in Settings.
+    // Leave the array empty ( [] ) to show a free-text field instead.
+    clinicians: [
+      'Dr Edward Vipas',
+      'Dr Chuk Lee',
+      'Dr Laura Walker',
+      'Dr Naureen Zafar',
+      'Nurse Sarah Reah',
+      'Heather Ainger',
+      'Pharm David Ewen',
+    ],
+  };
+  // ════════════════════════════════════════════════════════════════
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -643,31 +669,6 @@
 </div>
 
 <script>
-// ╔═══════════════════════════════════════════════════════════════╗
-// ║           SURGERY CONFIGURATION                               ║
-// ║  Edit this block before sharing the link with patients.       ║
-// ║  Everything else below should be left as-is.                  ║
-// ╚═══════════════════════════════════════════════════════════════╝
-const SURGERY_CONFIG = {
-  name:    'Hounsfield Surgery',
-  address: 'Sutton-on-Trent',
-  email:   'nnicb-nn.c84660@nhs.net',
-
-  // List each clinician's name as a quoted string, separated by commas.
-  // Patients will see a dropdown to choose their clinician in Settings.
-  // Leave the array empty ( [] ) to show a free-text field instead.
-  clinicians: [
-    'Dr Edward Vipas',
-    'Dr Chuk Lee',
-    'Dr Laura Walker',
-    'Dr Naureen Zafar',
-    'Nurse Sarah Reah',
-    'Heather Ainger',
-    'Pharm David Ewen',
-  ],
-};
-// ════════════════════════════════════════════════════════════════
-
 // ═══════════════════════════════════════════════
 //  DATA LAYER
 // ═══════════════════════════════════════════════
