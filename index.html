@@ -511,9 +511,9 @@
     <div class="card">
       <div class="card-title">📄 GP Report</div>
 
-      <div class="alert alert-info" style="margin-bottom:16px;font-size:0.82rem;">
-        <strong>Addressed to:</strong> Hounsfield Surgery, Sutton-on-Trent<br>
-        <strong>Email:</strong> nnicb-nn.c84660@nhs.net
+      <div class="form-group">
+        <label class="form-label">GP Email <span style="font-weight:400;font-size:0.8em;color:var(--muted);">(required to send to GP)</span></label>
+        <input class="form-control" type="email" id="reportGpEmail" placeholder="e.g. practice@nhs.net" oninput="updateSendGPButton()">
       </div>
 
       <div class="form-group">
@@ -530,12 +530,12 @@
       </div>
 
       <div class="btn-group" style="margin-top:4px;">
-        <button class="btn btn-primary" style="flex:1;" onclick="generatePDF()">🖨️ Generate PDF Report</button>
-        <button class="btn btn-secondary" style="flex:1;" onclick="emailReport()">📧 Email to GP</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="generatePDF()">🖨️ Save as PDF</button>
+        <button class="btn btn-secondary" id="btnSendGP" style="flex:1;" onclick="emailReport()" disabled>📧 Send PDF to GP</button>
       </div>
       <div class="alert alert-info" style="margin-top:12px;font-size:0.78rem;">
-        <strong>Generate PDF</strong> opens the report in a new tab — choose "Save as PDF" in the print dialog to download.
-        <strong>Email to GP</strong> opens your email app pre-addressed to the surgery.
+        <strong>Save as PDF</strong> opens the report in a new tab — choose "Save as PDF" in the print dialog to download.
+        <strong>Send PDF to GP</strong> opens your email app pre-addressed to your GP — enter a valid GP email above to enable it.
       </div>
     </div>
   </div>
@@ -567,6 +567,10 @@
     <div class="form-group">
       <label class="form-label">GP Name <span style="font-weight:400;font-size:0.85em;">(optional)</span></label>
       <input class="form-control" id="sGpName" placeholder="e.g. Dr A. Patel">
+    </div>
+    <div class="form-group">
+      <label class="form-label">GP Email <span style="font-weight:400;font-size:0.85em;">(optional)</span></label>
+      <input class="form-control" type="email" id="sGpEmail" placeholder="e.g. practice@nhs.net">
     </div>
 
     <div class="divider"></div>
@@ -1179,6 +1183,10 @@ function renderReport() {
     document.getElementById('reportFrom').value = sorted[0].date.slice(0,10);
     document.getElementById('reportTo').value = sorted[sorted.length-1].date.slice(0,10);
   }
+  const s = getSettings();
+  const emailEl = document.getElementById('reportGpEmail');
+  if (emailEl && !emailEl.value && s.gpEmail) emailEl.value = s.gpEmail;
+  updateSendGPButton();
 }
 
 function generatePDF() {
@@ -1397,13 +1405,28 @@ function generatePDF() {
   win.document.close();
 }
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function updateSendGPButton() {
+  const emailInput = document.getElementById('reportGpEmail');
+  const btn = document.getElementById('btnSendGP');
+  if (!emailInput || !btn) return;
+  const valid = isValidEmail(emailInput.value.trim());
+  btn.disabled = !valid;
+  btn.style.opacity = valid ? '' : '0.45';
+}
+
 function emailReport() {
   const s = getSettings();
+  const gpEmail = document.getElementById('reportGpEmail').value.trim();
+  if (!isValidEmail(gpEmail)) { showToast('⚠️ Please enter a valid GP email address.'); return; }
   const subject = encodeURIComponent(`Blood Pressure Report — ${s.patientName||'Patient'}`);
   const body = encodeURIComponent(
-    `Dear ${SURGERY_NAME},\n\nPlease find my blood pressure monitoring report attached as a PDF.\n\nPatient: ${s.patientName||'—'}\nDate of Birth: ${s.dob ? new Date(s.dob).toLocaleDateString('en-GB') : '—'}\nNHS Number: ${s.nhs||'—'}\n\nKind regards,\n${s.patientName||''}`
+    `Dear ${s.gpName||'GP'},\n\nPlease find my blood pressure monitoring report attached as a PDF.\n\nPatient: ${s.patientName||'—'}\nDate of Birth: ${s.dob ? new Date(s.dob).toLocaleDateString('en-GB') : '—'}\nNHS Number: ${s.nhs||'—'}\n\nKind regards,\n${s.patientName||''}`
   );
-  window.location.href = `mailto:${SURGERY_EMAIL}?subject=${subject}&body=${body}`;
+  window.location.href = `mailto:${gpEmail}?subject=${subject}&body=${body}`;
 }
 
 // ═══════════════════════════════════════════════
@@ -1442,6 +1465,7 @@ function openSettings() {
   document.getElementById('sDob').value = s.dob||'';
   document.getElementById('sNhs').value = s.nhs||'';
   document.getElementById('sGpName').value = s.gpName||'';
+  document.getElementById('sGpEmail').value = s.gpEmail||'';
   document.getElementById('settingsModal').classList.add('open');
 }
 
@@ -1455,9 +1479,11 @@ function saveSettings() {
     dob:         document.getElementById('sDob').value,
     nhs:         document.getElementById('sNhs').value.trim(),
     gpName:      document.getElementById('sGpName').value.trim(),
+    gpEmail:     document.getElementById('sGpEmail').value.trim(),
   };
   saveSettingsData(s);
   closeSettings();
+  updateSendGPButton();
   showToast('✅ Settings saved.');
 }
 
