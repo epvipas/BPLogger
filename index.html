@@ -467,9 +467,9 @@
 
     <!-- 7-day protocol -->
     <div class="card" id="protocolCard" style="display:none;">
-      <div class="card-title">📅 BIHS 7-Day Home Monitoring Protocol</div>
+      <div class="card-title">📅 Home Monitoring Protocol (7–14 Days)</div>
       <div class="alert alert-info" style="font-size:0.78rem;margin-bottom:12px;">
-        Measure twice daily (morning &amp; evening) for 7 consecutive days. Discard Day 1 readings. Average the remaining readings (Days 2–7). A home average ≥135/85 mmHg indicates hypertension.
+        Measure twice daily (morning &amp; evening) for 7–14 consecutive days as instructed by your GP. Day 1 readings are discarded. The remaining days are averaged for your result. A home average ≥135/85 mmHg indicates hypertension.
       </div>
       <div id="protocolContent"></div>
     </div>
@@ -1140,12 +1140,12 @@ function render7Day(readings) {
   const days = Object.keys(byDay).sort();
 
   if (days.length < 2) {
-    container.innerHTML='<div class="alert alert-info" style="font-size:0.78rem;">Need at least 2 days of readings for protocol analysis. Day 1 is discarded; continue recording for accurate 7-day results.</div>';
+    container.innerHTML='<div class="alert alert-info" style="font-size:0.78rem;">Need at least 2 days of readings for protocol analysis. Day 1 is discarded — continue recording for 7–14 days as instructed by your GP.</div>';
     return;
   }
 
-  // Discard day 1
-  const analysedDays = days.slice(1, 7); // days 2-7 (up to 6 days)
+  // Discard day 1; analyse up to day 14
+  const analysedDays = days.slice(1, 14); // days 2–14 (up to 13 days)
   const protocolReadings = analysedDays.flatMap(d=>byDay[d]);
 
   if (!protocolReadings.length) {
@@ -1157,6 +1157,8 @@ function render7Day(readings) {
   const pDia = Math.round(mean(protocolReadings.map(r=>r.dia)));
   const pCat = classifyBP(pSys, pDia);
   const homeHtn = pSys >= 135 || pDia >= 85;
+  const totalDays = days.length;
+  const isComplete = totalDays >= 7; // minimum 7 days; GP may request up to 14
 
   container.innerHTML = `
     <div class="table-wrap" style="margin-bottom:12px;">
@@ -1165,7 +1167,7 @@ function render7Day(readings) {
           <tr><th>Day</th><th>Date</th><th>Readings</th><th>Avg Sys</th><th>Avg Dia</th><th>Status</th></tr>
         </thead>
         <tbody>
-          ${days.slice(0,7).map((d,i)=>{
+          ${days.slice(0, 15).map((d,i)=>{
             const rs=byDay[d];
             const aSys=Math.round(mean(rs.map(r=>r.sys)));
             const aDia=Math.round(mean(rs.map(r=>r.dia)));
@@ -1182,16 +1184,16 @@ function render7Day(readings) {
         </tbody>
       </table>
     </div>
-    <div class="alert ${homeHtn?'alert-danger':'alert-ok'}">
-      <strong>Protocol Result (Days 2–${Math.min(days.length,7)}):</strong>
+    <div class="alert ${homeHtn?'alert-warn':'alert-ok'}">
+      <strong>Protocol Result (Days 2–${Math.min(totalDays, 14)}):</strong>
       Average ${pSys}/${pDia} mmHg — <strong>${pCat.name}</strong>.
       ${homeHtn
-        ? ' ⚠️ Home BP average meets the BIHS threshold for hypertension (≥135/85 mmHg). Please consult your GP.'
+        ? ' ⚠️ Home BP average meets the BIHS threshold for hypertension (≥135/85 mmHg).'
         : ' ✅ Home BP average is within normal range (<135/85 mmHg).'}
     </div>
     <div style="font-size:0.75rem;color:var(--muted);">
-      Based on ${protocolReadings.length} reading${protocolReadings.length!==1?'s':''} across ${analysedDays.length} day${analysedDays.length!==1?'s':''}
-      (${days.length >= 7 ? 'complete' : days.length - 1 + ' of 6 required days recorded'}).
+      Based on ${protocolReadings.length} reading${protocolReadings.length!==1?'s':''} across ${analysedDays.length} day${analysedDays.length!==1?'s':''}.
+      ${isComplete ? `Minimum 7-day period reached — continue to day 14 if your GP has requested it.` : `${totalDays - 1} of at least 6 required days recorded — keep going.`}
     </div>`;
 }
 
