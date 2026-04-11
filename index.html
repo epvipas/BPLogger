@@ -668,13 +668,13 @@ function classifyBP(sys, dia) {
     { name:'Normal',              color:'#16a34a', bg:'#f0fdf4', grade:2,
       advice:'Your blood pressure is normal. Keep up the healthy habits.' },
     { name:'High-Normal',         color:'#b45309', bg:'#fefce8', grade:3,
-      advice:'Your blood pressure is high-normal. Lifestyle modifications are recommended (reduce salt, increase exercise, limit alcohol). Monitor regularly.' },
+      advice:'Your blood pressure is high-normal. Try to relax, sit quietly for a few minutes, and repeat the reading. Lifestyle modifications such as reducing salt, increasing exercise, and limiting alcohol are recommended. Monitor regularly.' },
     { name:'Grade 1 Hypertension',color:'#c2410c', bg:'#fff7ed', grade:4,
-      advice:'Mild hypertension detected. Please consult your GP. Lifestyle changes are essential. Drug treatment may be required depending on cardiovascular risk.' },
+      advice:'This reading is in the mild hypertension range. Try to relax, sit quietly for a few minutes, and repeat the reading — readings can be higher when you are tense or rushed. Lifestyle changes are important; mention the readings to your GP at your next appointment.' },
     { name:'Grade 2 Hypertension',color:'#b91c1c', bg:'#fef2f2', grade:5,
-      advice:'Moderate hypertension detected. Please consult your GP promptly. Drug treatment is usually indicated alongside lifestyle changes.' },
+      advice:'This reading is in the moderate hypertension range. Take a moment to relax, sit quietly, and repeat the reading after a few minutes. Discuss these readings with your GP when you next speak with them.' },
     { name:'Grade 3 Hypertension',color:'#7c3aed', bg:'#faf5ff', grade:6,
-      advice:'Severe hypertension detected. Seek urgent medical attention. Immediate drug treatment is required.' },
+      advice:'This reading is on the higher end. Please sit quietly, try to relax, and repeat the reading after five minutes. If repeated readings remain at this level, contact your GP to discuss them.' },
   ];
 
   let sGrade, dGrade;
@@ -698,7 +698,7 @@ function classifyBP(sys, dia) {
   // Isolated systolic hypertension
   if (sGrade >= 4 && dGrade < 4) {
     cat.ish = true;
-    cat.advice = 'Isolated Systolic Hypertension detected — elevated systolic with normal diastolic. ' + cat.advice;
+    cat.advice = 'Your systolic (upper) reading is elevated while your diastolic (lower) reading is normal — this pattern is common and can be affected by stress or tension. ' + cat.advice;
   }
 
   // Home BP flag (≥135/85 = hypertension by home monitoring)
