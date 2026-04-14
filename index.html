@@ -561,8 +561,16 @@
       </div>
       <div class="alert alert-info" style="margin-top:12px;font-size:0.78rem;">
         <strong>Save as PDF</strong> opens the report in a new tab — choose "Save as PDF" in the print dialog to download.<br>
-        <strong>Send PDF to GP</strong> copies your formatted report to the clipboard and opens your email app. Follow the instructions in the email to paste the report, then click Send.
+        <strong>Send report to GP</strong> —
+        <span id="emailHelpDesktop">copies your formatted report to the clipboard and opens your email app. Follow the instructions in the email to paste the report, then click Send.</span>
+        <span id="emailHelpMobile" style="display:none;">downloads your report as a file and opens your email app. Attach the downloaded file to the email before sending.</span>
       </div>
+      <script>
+        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          document.getElementById('emailHelpDesktop').style.display = 'none';
+          document.getElementById('emailHelpMobile').style.display = '';
+        }
+      </script>
     </div>
   </div>
 
@@ -1453,6 +1461,10 @@ function updateSendGPButton() {
   btn.style.opacity = valid ? '' : '0.45';
 }
 
+function isMobileDevice() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
 async function emailReport() {
   const s = getSettings();
   const gpEmail = document.getElementById('reportGpEmail').value.trim();
@@ -1461,6 +1473,55 @@ async function emailReport() {
   const html = buildReportHTML();
   if (!html) return;
 
+  const dob = s.dob ? new Date(s.dob).toLocaleDateString('en-GB') : '—';
+  const subject = encodeURIComponent(`Blood Pressure Report — ${s.patientName||'Patient'}`);
+
+  // Mobile path: Gmail app cannot accept HTML paste from clipboard.
+  // Download the report as an HTML file and direct the user to attach it.
+  if (isMobileDevice()) {
+    const blob = new Blob([html], { type: 'text/html' });
+    const filename = `bp-report-${(s.patientName||'patient').replace(/\s+/g,'-').toLowerCase()}.html`;
+
+    // Try Web Share API (Android Chrome, iOS Safari) — shares the file directly
+    const file = new File([blob], filename, { type: 'text/html' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: `Blood Pressure Report — ${s.patientName||'Patient'}` });
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return; // user cancelled
+        // fall through to download
+      }
+    }
+
+    // Fallback: trigger a file download, then open the mail app with instructions
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+    const body = encodeURIComponent(
+`Dear ${s.gpName||'GP'},
+
+I have been monitoring my blood pressure at home. Please find my report attached.
+
+Patient: ${s.patientName||'—'}
+Date of Birth: ${dob}
+NHS Number: ${s.nhs||'—'}
+
+Kind regards,
+${s.patientName||''}`
+    );
+    window.location.href = `mailto:${gpEmail}?subject=${subject}&body=${body}`;
+    showToast('📎 Report downloaded — attach the file to your email before sending.');
+    return;
+  }
+
+  // Desktop path: write HTML to clipboard, open mail app with paste instructions
   try {
     await navigator.clipboard.write([
       new ClipboardItem({
@@ -1473,8 +1534,6 @@ async function emailReport() {
     return;
   }
 
-  const dob = s.dob ? new Date(s.dob).toLocaleDateString('en-GB') : '—';
-  const subject = encodeURIComponent(`Blood Pressure Report — ${s.patientName||'Patient'}`);
   const body = encodeURIComponent(
 `Dear ${s.gpName||'GP'},
 
