@@ -159,17 +159,6 @@
     .bp-unit { font-size: 0.68rem; color: var(--muted); margin-top: 3px; text-align: center; }
     textarea.form-control { resize: vertical; min-height: 76px; font-size: 0.9rem; }
 
-    /* session radio */
-    .session-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .session-btn {
-      flex: 1; min-width: 80px;
-      padding: 9px 12px; border: 2px solid var(--border);
-      border-radius: 8px; background: white;
-      font-size: 0.8rem; font-weight: 600; color: var(--muted);
-      cursor: pointer; text-align: center; transition: all 0.2s;
-    }
-    .session-btn.selected { border-color: var(--primary-mid); color: var(--primary); background: var(--primary-light); }
-
     /* ── BUTTONS ── */
     .btn {
       padding: 13px 22px; border: none; border-radius: 10px;
@@ -286,25 +275,6 @@
     .zone-legend { display: flex; flex-wrap: wrap; gap: 8px; }
     .zone-item { display: flex; align-items: center; gap: 6px; font-size: 0.76rem; }
     .zone-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
-
-    /* ── BP GAUGE ── */
-    .bp-gauge-bar {
-      height: 10px; border-radius: 5px; margin: 8px 0;
-      background: linear-gradient(to right,
-        #15803d 0% 18%, #16a34a 18% 32%,
-        #b45309 32% 48%, #c2410c 48% 64%,
-        #b91c1c 64% 80%, #7c3aed 80% 100%);
-    }
-    .bp-gauge-needle {
-      position: relative; height: 0;
-    }
-    .bp-gauge-needle::after {
-      content: '▲';
-      position: absolute;
-      top: -16px; font-size: 10px;
-      transform: translateX(-50%);
-      color: var(--text);
-    }
 
     /* ── DIVIDER ── */
     .divider { height: 1px; background: var(--border); margin: 16px 0; }
@@ -435,6 +405,15 @@
         <strong>Home monitoring:</strong> Home readings ≥135/85 mmHg indicate hypertension (equivalent to clinic ≥140/90 mmHg) — <em>British and Irish Hypertension Society 2023</em>
       </div>
     </div>
+
+    <!-- Printable paper diary -->
+    <div class="card">
+      <div class="card-title">📝 Prefer paper? Download a printable BP diary</div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;line-height:1.5;">
+        A printable 14-day blood pressure diary with space for two morning and two evening readings per day. Patient details are filled in automatically from your Settings.
+      </p>
+      <button class="btn btn-secondary btn-block" onclick="printDiary()">🖨️ Open Printable BP Diary</button>
+    </div>
   </div>
 
   <!-- ══════════════ HISTORY TAB ══════════════ -->
@@ -561,16 +540,8 @@
       </div>
       <div class="alert alert-info" style="margin-top:12px;font-size:0.78rem;">
         <strong>Save as PDF</strong> opens the report in a new tab — choose "Save as PDF" in the print dialog to download.<br>
-        <strong>Send report to GP</strong> —
-        <span id="emailHelpDesktop">copies your formatted report to the clipboard and opens your email app. Follow the instructions in the email to paste the report, then click Send.</span>
-        <span id="emailHelpMobile" style="display:none;">downloads your report as a file and opens your email app. Attach the downloaded file to the email before sending.</span>
+        <strong>Send PDF to GP</strong> generates a PDF of your report. On a phone or tablet, a share menu opens — pick your email app and the PDF is attached automatically. On desktop, the PDF downloads and your email app opens with a cover message — just attach the downloaded PDF before clicking Send.
       </div>
-      <script>
-        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-          document.getElementById('emailHelpDesktop').style.display = 'none';
-          document.getElementById('emailHelpMobile').style.display = '';
-        }
-      </script>
     </div>
   </div>
 
@@ -918,7 +889,7 @@ function renderHistory() {
 }
 
 function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function deleteReading(id) {
@@ -1448,6 +1419,156 @@ function generatePDF() {
   win.document.close();
 }
 
+// ═══════════════════════════════════════════════
+//  PRINTABLE PAPER DIARY
+// ═══════════════════════════════════════════════
+function buildDiaryHTML() {
+  const s = getSettings();
+  const DAYS = 14;
+
+  const dayRows = Array.from({ length: DAYS }, (_, i) => `
+    <tr>
+      <td class="day-cell">Day ${i + 1}</td>
+      <td class="date-cell"></td>
+      <td></td><td></td><td></td>
+      <td></td><td></td><td></td>
+      <td></td>
+    </tr>`).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BP Diary — ${escHtml(s.patientName || 'Patient')}</title>
+<style>
+  @page { size: A4; margin: 12mm 14mm; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; color: #1e293b; background: #fff; }
+
+  .print-bar { padding: 12px 20px; background: #eff6ff; border-bottom: 2px solid #bfdbfe; display: flex; gap: 14px; align-items: center; }
+  .print-bar button { padding: 9px 22px; background: #1e40af; color: #fff; border: none; border-radius: 6px; font-size: 10pt; font-weight: 700; cursor: pointer; }
+  .print-bar span { font-size: 8.5pt; color: #6b7280; }
+
+  .wrap { padding: 10mm; max-width: 210mm; margin: 0 auto; }
+
+  .hdr { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #fff; padding: 14px 18px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  .hdr h1 { font-size: 15pt; font-weight: 800; letter-spacing: -0.02em; }
+  .hdr .sub { font-size: 8pt; opacity: 0.85; margin-top: 3px; }
+  .hdr .surg { text-align: right; font-size: 8.5pt; opacity: 0.95; line-height: 1.5; flex-shrink: 0; }
+  .hdr .surg strong { font-size: 9.5pt; display: block; }
+
+  h2 { font-size: 8pt; color: #1e40af; border-bottom: 1.5px solid #1e40af; padding-bottom: 3px; margin: 12px 0 7px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 800; }
+
+  .patient-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .pbox { border: 1px solid #cbd5e1; border-radius: 5px; padding: 6px 9px; min-height: 36px; }
+  .plbl { font-size: 6.5pt; color: #6b7280; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 700; }
+  .pval { font-size: 10pt; font-weight: 700; color: #1e293b; margin-top: 2px; min-height: 14pt; }
+
+  .instructions { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; font-size: 8.5pt; line-height: 1.45; color: #1e3a8a; }
+  .instructions strong { color: #1e40af; }
+
+  table.diary { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 10px; table-layout: fixed; }
+  table.diary th { background: #1e40af; color: #fff; padding: 5px 4px; text-align: center; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; border: 1px solid #1e3a8a; }
+  table.diary th.session { background: #1e3a8a; }
+  table.diary td { border: 1px solid #cbd5e1; height: 28px; padding: 0; }
+  table.diary .day-cell { background: #f1f5f9; text-align: center; font-weight: 700; font-size: 8pt; color: #475569; width: 8%; }
+  table.diary .date-cell { width: 11%; background: #fafbfc; }
+
+  table.bhs { width: 100%; border-collapse: collapse; font-size: 7.5pt; margin-top: 4px; }
+  table.bhs th { background: #f1f5f9; padding: 4px 6px; text-align: left; font-weight: 700; border: 1px solid #cbd5e1; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.04em; color: #475569; }
+  table.bhs td { padding: 4px 6px; border: 1px solid #cbd5e1; }
+
+  .footer { margin-top: 10px; padding-top: 6px; border-top: 1px solid #e2e8f0; font-size: 6.5pt; color: #94a3b8; text-align: center; line-height: 1.5; }
+
+  @media print {
+    .print-bar { display: none !important; }
+    .wrap { padding: 0; }
+    body { font-size: 9pt; }
+  }
+</style>
+</head>
+<body>
+<div class="print-bar">
+  <button onclick="window.print()">🖨️ Save as PDF / Print</button>
+  <span>In the print dialog, set the destination to <strong>"Save as PDF"</strong> to download, or pick a printer.</span>
+</div>
+<div class="wrap">
+
+  <div class="hdr">
+    <div>
+      <h1>Home Blood Pressure Diary</h1>
+      <div class="sub">14-day record · British Hypertension Society protocol</div>
+    </div>
+    <div class="surg">
+      <strong>${escHtml(SURGERY_CONFIG.name)}</strong>
+      ${escHtml(SURGERY_CONFIG.address)}<br>
+      ${escHtml(SURGERY_CONFIG.email)}
+    </div>
+  </div>
+
+  <h2>Patient Details</h2>
+  <div class="patient-grid">
+    <div class="pbox"><div class="plbl">Full Name</div><div class="pval">${escHtml(s.patientName || '')}</div></div>
+    <div class="pbox"><div class="plbl">Date of Birth</div><div class="pval">${s.dob ? new Date(s.dob).toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'}) : ''}</div></div>
+    <div class="pbox"><div class="plbl">NHS Number</div><div class="pval">${escHtml(s.nhs || '')}</div></div>
+    <div class="pbox"><div class="plbl">GP / Clinician</div><div class="pval">${escHtml(s.gpName || '')}</div></div>
+    <div class="pbox"><div class="plbl">Monitoring Start Date</div><div class="pval"></div></div>
+    <div class="pbox"><div class="plbl">Arm Used (L / R)</div><div class="pval"></div></div>
+  </div>
+
+  <div class="instructions">
+    <strong>How to use this diary:</strong> Take <strong>two readings</strong> each <strong>morning</strong> (before breakfast and medication) and <strong>two each evening</strong> (before your evening meal) for 14 consecutive days. Sit quietly for 5 minutes before each reading, with your back supported and feet flat on the floor. Wait 1–2 minutes between the two readings. Record both — your GP will discard Day 1 and average the rest. A home average ≥135/85 mmHg indicates hypertension (BIHS 2023).
+  </div>
+
+  <table class="diary">
+    <thead>
+      <tr>
+        <th rowspan="2">Day</th>
+        <th rowspan="2">Date</th>
+        <th colspan="3" class="session">Morning</th>
+        <th colspan="3" class="session">Evening</th>
+        <th rowspan="2">Notes</th>
+      </tr>
+      <tr>
+        <th>BP 1<br>(sys/dia)</th><th>BP 2<br>(sys/dia)</th><th>Pulse</th>
+        <th>BP 1<br>(sys/dia)</th><th>BP 2<br>(sys/dia)</th><th>Pulse</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${dayRows}
+    </tbody>
+  </table>
+
+  <h2>BHS Classification Reference</h2>
+  <table class="bhs">
+    <thead><tr><th>Category</th><th>Clinic Systolic (mmHg)</th><th>Clinic Diastolic (mmHg)</th><th>Home BP Threshold</th></tr></thead>
+    <tbody>
+      <tr><td style="color:#15803d;font-weight:600;">Optimal</td><td>&lt; 120</td><td>&lt; 80</td><td>—</td></tr>
+      <tr><td style="color:#16a34a;font-weight:600;">Normal</td><td>120–129</td><td>80–84</td><td>—</td></tr>
+      <tr><td style="color:#b45309;font-weight:600;">High-Normal</td><td>130–139</td><td>85–89</td><td>&lt; 135/85 (normal)</td></tr>
+      <tr><td style="color:#c2410c;font-weight:600;">Grade 1 Hypertension</td><td>140–159</td><td>90–99</td><td>≥ 135/85</td></tr>
+      <tr><td style="color:#b91c1c;font-weight:600;">Grade 2 Hypertension</td><td>160–179</td><td>100–109</td><td>≥ 150/95</td></tr>
+      <tr><td style="color:#7c3aed;font-weight:600;">Grade 3 Hypertension</td><td>≥ 180</td><td>≥ 110</td><td>≥ 180/110</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Source: British and Irish Hypertension Society (BIHS) Guidelines, 2023 &nbsp;·&nbsp;
+    Generated by BP Logger &nbsp;·&nbsp;
+    Please bring this diary to your GP appointment.
+  </div>
+</div>
+</body></html>`;
+}
+
+function printDiary() {
+  const html = buildDiaryHTML();
+  const win = window.open('', '_blank');
+  if (!win) { showToast('⚠️ Pop-up blocked — please allow pop-ups for this page.'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -1461,8 +1582,95 @@ function updateSendGPButton() {
   btn.style.opacity = valid ? '' : '0.45';
 }
 
-function isMobileDevice() {
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[data-src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.setAttribute('data-src', src);
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('script load failed: ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+async function loadPDFLibs() {
+  if (window.html2canvas && window.jspdf) return;
+  await Promise.all([
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+  ]);
+}
+
+async function buildReportPDFBlob() {
+  const html = buildReportHTML();
+  if (!html) return null;
+
+  await loadPDFLibs();
+
+  // Extract the report's <style> block and body content (minus the on-screen print bar).
+  const parsed = new DOMParser().parseFromString(html, 'text/html');
+  const printBar = parsed.querySelector('.print-bar');
+  if (printBar) printBar.remove();
+  const styleCSS = Array.from(parsed.querySelectorAll('style')).map(s => s.textContent).join('\n');
+  const bodyInner = parsed.body.innerHTML;
+
+  // Render in an on-screen but visually invisible container at (0,0). This avoids
+  // the negative-offset issue that html2pdf's own offscreen container caused on some
+  // devices (content got cropped because html2canvas captured it at x=-100000).
+  const RENDER_WIDTH = 794; // A4 width at 96dpi
+  const container = document.createElement('div');
+  container.id = '__bp_pdf_container__';
+  container.style.cssText = `position:absolute;top:0;left:0;width:${RENDER_WIDTH}px;background:#fff;opacity:0;pointer-events:none;z-index:-9999;`;
+  container.innerHTML = `<style>${styleCSS}</style>${bodyInner}`;
+  document.body.appendChild(container);
+
+  try {
+    // Let layout settle
+    await new Promise(r => setTimeout(r, 100));
+
+    const canvas = await window.html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      width: RENDER_WIDTH,
+      windowWidth: RENDER_WIDTH,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const pageWidthMM = pdf.internal.pageSize.getWidth();   // 210
+    const pageHeightMM = pdf.internal.pageSize.getHeight(); // 297
+    const pxPerMM = canvas.width / pageWidthMM;
+    const pageHeightPx = Math.floor(pageHeightMM * pxPerMM);
+
+    // Slice the tall canvas into page-sized chunks so the PDF stays reasonably small.
+    const sliceCanvas = document.createElement('canvas');
+    sliceCanvas.width = canvas.width;
+    const ctx = sliceCanvas.getContext('2d');
+
+    let offsetY = 0;
+    let first = true;
+    while (offsetY < canvas.height) {
+      const sliceHeight = Math.min(pageHeightPx, canvas.height - offsetY);
+      sliceCanvas.height = sliceHeight;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, sliceHeight);
+      ctx.drawImage(canvas, 0, -offsetY);
+      const imgData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+      if (!first) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, 0, pageWidthMM, sliceHeight / pxPerMM);
+      offsetY += sliceHeight;
+      first = false;
+    }
+
+    return pdf.output('blob');
+  } finally {
+    if (container.parentNode) container.parentNode.removeChild(container);
+  }
 }
 
 async function emailReport() {
@@ -1470,41 +1678,27 @@ async function emailReport() {
   const gpEmail = document.getElementById('reportGpEmail').value.trim();
   if (!isValidEmail(gpEmail)) { showToast('⚠️ Please enter a valid GP email address.'); return; }
 
-  const html = buildReportHTML();
-  if (!html) return;
+  const btn = document.getElementById('btnSendGP');
+  const origLabel = btn ? btn.innerHTML : null;
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Generating PDF…'; }
+
+  let blob;
+  try {
+    blob = await buildReportPDFBlob();
+  } catch (e) {
+    if (btn) { btn.innerHTML = origLabel; btn.disabled = false; }
+    showToast('⚠️ Could not generate PDF. Check your internet connection, or use "Save as PDF".');
+    return;
+  }
+  if (btn) { btn.innerHTML = origLabel; btn.disabled = false; updateSendGPButton(); }
+  if (!blob) return;
+
+  const filename = `bp-report-${(s.patientName||'patient').replace(/\s+/g,'-').toLowerCase()}.pdf`;
+  const file = new File([blob], filename, { type: 'application/pdf' });
 
   const dob = s.dob ? new Date(s.dob).toLocaleDateString('en-GB') : '—';
-  const subject = encodeURIComponent(`Blood Pressure Report — ${s.patientName||'Patient'}`);
-
-  // Mobile path: Gmail app cannot accept HTML paste from clipboard.
-  // Download the report as an HTML file and direct the user to attach it.
-  if (isMobileDevice()) {
-    const blob = new Blob([html], { type: 'text/html' });
-    const filename = `bp-report-${(s.patientName||'patient').replace(/\s+/g,'-').toLowerCase()}.html`;
-
-    // Try Web Share API (Android Chrome, iOS Safari) — shares the file directly
-    const file = new File([blob], filename, { type: 'text/html' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: `Blood Pressure Report — ${s.patientName||'Patient'}` });
-        return;
-      } catch (e) {
-        if (e.name === 'AbortError') return; // user cancelled
-        // fall through to download
-      }
-    }
-
-    // Fallback: trigger a file download, then open the mail app with instructions
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-
-    const body = encodeURIComponent(
+  const subject = `Blood Pressure Report — ${s.patientName||'Patient'}`;
+  const bodyText =
 `Dear ${s.gpName||'GP'},
 
 I have been monitoring my blood pressure at home. Please find my report attached.
@@ -1514,50 +1708,31 @@ Date of Birth: ${dob}
 NHS Number: ${s.nhs||'—'}
 
 Kind regards,
-${s.patientName||''}`
-    );
-    window.location.href = `mailto:${gpEmail}?subject=${subject}&body=${body}`;
-    showToast('📎 Report downloaded — attach the file to your email before sending.');
-    return;
+${s.patientName||''}`;
+
+  // Phone/tablet: try Web Share API with the PDF file — opens the native share sheet
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: subject, text: bodyText });
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return; // user cancelled
+      // fall through to download + mailto
+    }
   }
 
-  // Desktop path: write HTML to clipboard, open mail app with paste instructions
-  try {
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        'text/html': new Blob([html], { type: 'text/html' }),
-        'text/plain': new Blob(['[Blood pressure report — please view in a formatted email client]'], { type: 'text/plain' }),
-      })
-    ]);
-  } catch (e) {
-    showToast('⚠️ Clipboard not available. Use "Save as PDF" and attach it manually.');
-    return;
-  }
+  // Desktop (or device without file-share support): download the PDF, then open the mail app
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 
-  const body = encodeURIComponent(
-`Dear ${s.gpName||'GP'},
-
-I have been monitoring my blood pressure at home. My formatted report is pasted below.
-
-Patient: ${s.patientName||'—'}
-Date of Birth: ${dob}
-NHS Number: ${s.nhs||'—'}
-
-Kind regards,
-${s.patientName||''}
-
-─────────────────────────────────────────────
-*** YOUR REPORT IS READY TO PASTE ***
-
-  STEP 1 — Click in the email body, just below this box
-  STEP 2 — Press Ctrl+V on Windows  or  Cmd+V on a Mac
-  STEP 3 — Your formatted report will appear
-  STEP 4 — Delete this instruction box, then click Send
-─────────────────────────────────────────────`
-  );
-
-  window.location.href = `mailto:${gpEmail}?subject=${subject}&body=${body}`;
-  showToast('✅ Report copied! Paste into your email with Ctrl+V or Cmd+V.');
+  window.location.href = `mailto:${gpEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+  showToast('📎 PDF downloaded — attach it to your email before sending.');
 }
 
 // ═══════════════════════════════════════════════
@@ -1566,14 +1741,13 @@ ${s.patientName||''}
 function exportCSV() {
   const readings = getReadings();
   if (!readings.length) { showToast('⚠️ No readings to export.'); return; }
-  const header = ['Date','Time','Systolic_mmHg','Diastolic_mmHg','Pulse_bpm','Session','Category','Notes'];
+  const header = ['Date','Time','Systolic_mmHg','Diastolic_mmHg','Pulse_bpm','Category','Notes'];
   const rows = readings.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(r=>{
     const d = new Date(r.date);
     return [
       d.toLocaleDateString('en-GB'),
       d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
-      r.sys, r.dia, r.pulse,
-      r.session||'',
+      r.sys, r.dia, r.pulse != null ? r.pulse : '',
       r.category||'',
       `"${(r.notes||'').replace(/"/g,'""')}"`,
     ].join(',');
@@ -1645,17 +1819,6 @@ function onGpSelectChange() {
   const sel = document.getElementById('sGpSelect');
   document.getElementById('gpNameGroup').style.display = sel.value === '' ? '' : 'none';
   if (sel.value !== '') document.getElementById('sGpName').value = '';
-}
-
-function titleCase(str) {
-  const lower = ['OF','THE','AND','AT','IN','ON','FOR','TO','A','AN'];
-  return str.toLowerCase().replace(/\b\w+/g, (w,i) =>
-    (i > 0 && lower.includes(w.toUpperCase())) ? w : w.charAt(0).toUpperCase() + w.slice(1)
-  );
-}
-
-function escAttr(str) {
-  return (str||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
 }
 
 function confirmClearData() {
