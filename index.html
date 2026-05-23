@@ -635,6 +635,43 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- EMAIL STEP 2 MODAL (shown after PDF download on desktop) -->
+<div class="modal-overlay" id="emailStepModal">
+  <div class="modal" style="max-width:520px;">
+    <button class="modal-close" onclick="closeEmailStep()">✕</button>
+    <div class="modal-title">📎 PDF Ready — Open Your Email</div>
+
+    <div class="alert alert-ok" style="margin-bottom:14px;font-size:0.85rem;">
+      ✅ PDF saved to your Downloads folder as<br>
+      <code id="emailStepFilename" style="font-size:0.82rem;word-break:break-all;"></code>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">To</label>
+      <input class="form-control" id="emailStepTo" readonly style="font-family:monospace;font-size:0.9rem;">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Subject</label>
+      <input class="form-control" id="emailStepSubject" readonly style="font-size:0.9rem;">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Message</label>
+      <textarea class="form-control" id="emailStepBody" readonly style="min-height:120px;font-size:0.85rem;"></textarea>
+    </div>
+
+    <a id="emailStepOpenLink" class="btn btn-primary btn-block" style="margin-bottom:10px;text-decoration:none;" href="#" onclick="closeEmailStepSoon()">
+      📧 Open Email Draft
+    </a>
+    <button class="btn btn-secondary btn-block" onclick="copyEmailDetails()" style="margin-bottom:14px;">
+      📋 Copy email body to clipboard
+    </button>
+
+    <div class="alert alert-warn" style="font-size:0.78rem;margin-bottom:0;">
+      <strong>Don't forget:</strong> after your email opens, attach the downloaded PDF (drag it in, or use your email app's attach button) before clicking Send.
+    </div>
+  </div>
+</div>
+
 <!-- PRIVACY NOTICE MODAL (first visit only) -->
 <div class="modal-overlay" id="privacyModal">
   <div class="modal" style="max-width:420px;text-align:center;">
@@ -1721,7 +1758,10 @@ ${s.patientName||''}`;
     }
   }
 
-  // Desktop (or device without file-share support): download the PDF, then open the mail app
+  // Desktop (or device without file-share support): download the PDF, then show a
+  // two-step modal so the user opens the email with a real click. Firing mailto:
+  // programmatically right after the download race-conditions with Outlook on
+  // Windows (To: field ends up empty; a phantom "no_name" empty attachment appears).
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -1731,8 +1771,41 @@ ${s.patientName||''}`;
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 
-  window.location.href = `mailto:${gpEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-  showToast('📎 PDF downloaded — attach it to your email before sending.');
+  showEmailStep({ gpEmail, subject, bodyText, filename });
+}
+
+function showEmailStep({ gpEmail, subject, bodyText, filename }) {
+  document.getElementById('emailStepFilename').textContent = filename;
+  document.getElementById('emailStepTo').value = gpEmail;
+  document.getElementById('emailStepSubject').value = subject;
+  document.getElementById('emailStepBody').value = bodyText;
+  const link = document.getElementById('emailStepOpenLink');
+  link.href = `mailto:${encodeURIComponent(gpEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+  document.getElementById('emailStepModal').classList.add('open');
+}
+
+function closeEmailStep() {
+  document.getElementById('emailStepModal').classList.remove('open');
+}
+
+function closeEmailStepSoon() {
+  // Close the modal after the browser has handed the mailto: off to the OS,
+  // so the user isn't left staring at the modal once their email client opens.
+  setTimeout(closeEmailStep, 800);
+}
+
+async function copyEmailDetails() {
+  const body = document.getElementById('emailStepBody').value;
+  try {
+    await navigator.clipboard.writeText(body);
+    showToast('📋 Email body copied.');
+  } catch {
+    // Fallback: select the textarea so the user can copy manually
+    const ta = document.getElementById('emailStepBody');
+    ta.focus();
+    ta.select();
+    showToast('Press Ctrl/Cmd+C to copy.');
+  }
 }
 
 // ═══════════════════════════════════════════════
