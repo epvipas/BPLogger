@@ -668,12 +668,13 @@
       </div>
     </div>
 
-    <a id="emailStepOpenLink" class="btn btn-primary btn-block" style="margin-bottom:14px;text-decoration:none;" href="#" onclick="closeEmailStepSoon()">
-      📧 Open Email Draft
-    </a>
+    <button class="btn btn-primary btn-block" style="margin-bottom:10px;" onclick="copyBodyAndOpenEmail()">
+      📋 Copy Body &amp; Open Email
+    </button>
+    <a id="emailStepOpenLink" href="#" style="display:none;" onclick="closeEmailStepSoon()"></a>
 
-    <div class="alert alert-warn" style="font-size:0.78rem;margin-bottom:0;">
-      <strong>If Outlook opens with empty fields,</strong> use the 📋 buttons above to copy each field into the email manually. Then attach the downloaded PDF before clicking Send.
+    <div class="alert alert-warn" style="font-size:0.78rem;margin-bottom:0;line-height:1.5;">
+      <strong>What happens next:</strong> Outlook will open with the recipient and subject pre-filled. The message body is on your clipboard — click in the email body and press <strong>Ctrl+V</strong> to paste it. Then attach <code id="emailStepFilenameInline" style="font-size:0.78rem;"></code> from your Downloads folder and click Send.
     </div>
   </div>
 </div>
@@ -1788,18 +1789,24 @@ ${s.patientName||''}`;
 
 function showEmailStep({ gpEmail, subject, bodyText, filename }) {
   document.getElementById('emailStepFilename').textContent = filename;
+  document.getElementById('emailStepFilenameInline').textContent = filename;
   document.getElementById('emailStepTo').value = gpEmail;
   document.getElementById('emailStepSubject').value = subject;
   document.getElementById('emailStepBody').value = bodyText;
   const link = document.getElementById('emailStepOpenLink');
-  // Build mailto: defensively for Outlook on Windows:
-  //   - Email kept literal (encodeURIComponent turns "@" into "%40", which Outlook
-  //     can't parse → To: field comes through empty).
-  //   - Body newlines normalised to CRLF (Outlook requires %0D%0A, not %0A).
-  //   - Subject/body are ASCII (em-dashes already replaced upstream).
-  const bodyCrlf = bodyText.replace(/\r?\n/g, '\r\n');
-  link.href = `mailto:${gpEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyCrlf)}`;
+  // Deliberately omit the body from the mailto: URL — new Outlook on Windows
+  // spawns a phantom empty "no_name" attachment when body= is present. The user
+  // copies the body to the clipboard via the button below, then pastes after
+  // Outlook opens. Email is left literal so "@" isn't %40-encoded.
+  link.href = `mailto:${gpEmail}?subject=${encodeURIComponent(subject)}`;
   document.getElementById('emailStepModal').classList.add('open');
+}
+
+async function copyBodyAndOpenEmail() {
+  const body = document.getElementById('emailStepBody').value;
+  try { await navigator.clipboard.writeText(body); showToast('📋 Body copied — opening email…'); }
+  catch { showToast('Could not copy automatically — please copy the body manually.'); }
+  document.getElementById('emailStepOpenLink').click();
 }
 
 function closeEmailStep() {
