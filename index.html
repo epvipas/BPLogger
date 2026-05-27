@@ -648,26 +648,32 @@
 
     <div class="form-group">
       <label class="form-label">To</label>
-      <input class="form-control" id="emailStepTo" readonly style="font-family:monospace;font-size:0.9rem;">
+      <div style="display:flex;gap:6px;">
+        <input class="form-control" id="emailStepTo" readonly onclick="this.select()" style="font-family:monospace;font-size:0.9rem;flex:1;">
+        <button class="btn btn-secondary btn-sm" onclick="copyEmailField('emailStepTo')">📋</button>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Subject</label>
-      <input class="form-control" id="emailStepSubject" readonly style="font-size:0.9rem;">
+      <div style="display:flex;gap:6px;">
+        <input class="form-control" id="emailStepSubject" readonly onclick="this.select()" style="font-size:0.9rem;flex:1;">
+        <button class="btn btn-secondary btn-sm" onclick="copyEmailField('emailStepSubject')">📋</button>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Message</label>
-      <textarea class="form-control" id="emailStepBody" readonly style="min-height:120px;font-size:0.85rem;"></textarea>
+      <div style="display:flex;gap:6px;align-items:flex-start;">
+        <textarea class="form-control" id="emailStepBody" readonly onclick="this.select()" style="min-height:120px;font-size:0.85rem;flex:1;"></textarea>
+        <button class="btn btn-secondary btn-sm" onclick="copyEmailField('emailStepBody')">📋</button>
+      </div>
     </div>
 
-    <a id="emailStepOpenLink" class="btn btn-primary btn-block" style="margin-bottom:10px;text-decoration:none;" href="#" onclick="closeEmailStepSoon()">
+    <a id="emailStepOpenLink" class="btn btn-primary btn-block" style="margin-bottom:14px;text-decoration:none;" href="#" onclick="closeEmailStepSoon()">
       📧 Open Email Draft
     </a>
-    <button class="btn btn-secondary btn-block" onclick="copyEmailDetails()" style="margin-bottom:14px;">
-      📋 Copy email body to clipboard
-    </button>
 
     <div class="alert alert-warn" style="font-size:0.78rem;margin-bottom:0;">
-      <strong>Don't forget:</strong> after your email opens, attach the downloaded PDF (drag it in, or use your email app's attach button) before clicking Send.
+      <strong>If Outlook opens with empty fields,</strong> use the 📋 buttons above to copy each field into the email manually. Then attach the downloaded PDF before clicking Send.
     </div>
   </div>
 </div>
@@ -1733,16 +1739,18 @@ async function emailReport() {
   const filename = `bp-report-${(s.patientName||'patient').replace(/\s+/g,'-').toLowerCase()}.pdf`;
   const file = new File([blob], filename, { type: 'application/pdf' });
 
-  const dob = s.dob ? new Date(s.dob).toLocaleDateString('en-GB') : '—';
-  const subject = `Blood Pressure Report — ${s.patientName||'Patient'}`;
+  const dob = s.dob ? new Date(s.dob).toLocaleDateString('en-GB') : '-';
+  // Keep subject/body ASCII-only — Outlook on Windows mangles multi-byte UTF-8
+  // (e.g. em-dash) in mailto: URLs and silently drops fields when parsing fails.
+  const subject = `Blood Pressure Report - ${s.patientName||'Patient'}`;
   const bodyText =
 `Dear ${s.gpName||'GP'},
 
 I have been monitoring my blood pressure at home. Please find my report attached.
 
-Patient: ${s.patientName||'—'}
+Patient: ${s.patientName||'-'}
 Date of Birth: ${dob}
-NHS Number: ${s.nhs||'—'}
+NHS Number: ${s.nhs||'-'}
 
 Kind regards,
 ${s.patientName||''}`;
@@ -1769,7 +1777,11 @@ ${s.patientName||''}`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  // Revoke quickly: Outlook on Windows (invoked via mailto: from Chromium) can
+  // grab the most-recently-active blob URL and attach it as an empty "no_name"
+  // file. Once the download is initiated the browser holds its own reference,
+  // so revoking the URL early doesn't cancel it.
+  setTimeout(() => URL.revokeObjectURL(url), 500);
 
   showEmailStep({ gpEmail, subject, bodyText, filename });
 }
@@ -1780,7 +1792,13 @@ function showEmailStep({ gpEmail, subject, bodyText, filename }) {
   document.getElementById('emailStepSubject').value = subject;
   document.getElementById('emailStepBody').value = bodyText;
   const link = document.getElementById('emailStepOpenLink');
-  link.href = `mailto:${encodeURIComponent(gpEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+  // Build mailto: defensively for Outlook on Windows:
+  //   - Email kept literal (encodeURIComponent turns "@" into "%40", which Outlook
+  //     can't parse → To: field comes through empty).
+  //   - Body newlines normalised to CRLF (Outlook requires %0D%0A, not %0A).
+  //   - Subject/body are ASCII (em-dashes already replaced upstream).
+  const bodyCrlf = bodyText.replace(/\r?\n/g, '\r\n');
+  link.href = `mailto:${gpEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyCrlf)}`;
   document.getElementById('emailStepModal').classList.add('open');
 }
 
@@ -1794,16 +1812,14 @@ function closeEmailStepSoon() {
   setTimeout(closeEmailStep, 800);
 }
 
-async function copyEmailDetails() {
-  const body = document.getElementById('emailStepBody').value;
+async function copyEmailField(id) {
+  const el = document.getElementById(id);
   try {
-    await navigator.clipboard.writeText(body);
-    showToast('📋 Email body copied.');
+    await navigator.clipboard.writeText(el.value);
+    showToast('📋 Copied.');
   } catch {
-    // Fallback: select the textarea so the user can copy manually
-    const ta = document.getElementById('emailStepBody');
-    ta.focus();
-    ta.select();
+    el.focus();
+    el.select();
     showToast('Press Ctrl/Cmd+C to copy.');
   }
 }
