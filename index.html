@@ -145,6 +145,10 @@
 
     /* ── FORM ── */
     .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .reading-row { display: grid; grid-template-columns: 26px 1fr 1fr 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .reading-head { margin-bottom: 4px; }
+    .reading-num { font-weight: 800; color: var(--muted); text-align: center; font-size: 1rem; }
+    .reading-unit { display: block; font-size: 0.62rem; font-weight: 400; color: var(--muted); margin-top: 1px; }
     .form-group { margin-bottom: 14px; }
     .form-label {
       display: block; font-size: 0.78rem; font-weight: 700;
@@ -351,6 +355,22 @@
   <!-- ══════════════ LOG TAB ══════════════ -->
   <div class="tab-pane active" id="pane-log">
 
+    <!-- Setup prompt (only shown until name + DOB are saved in Settings) -->
+    <div class="card" id="settingsPromptCard" role="button" tabindex="0"
+      onclick="openSettings()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSettings();}"
+      style="display:none;cursor:pointer;border:1px solid #fcd34d;background:#fffbeb;">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <div style="font-size:1.4rem;line-height:1;">⚙️</div>
+        <div style="flex:1;">
+          <div style="font-size:0.95rem;font-weight:700;margin-bottom:4px;">Finish setting up — tap here</div>
+          <p style="font-size:0.85rem;color:var(--text);line-height:1.5;margin:0;">
+            Add your <strong>name</strong> and <strong>date of birth</strong> in Settings so your readings can be matched to your GP record and you can download reports and the printable diary.
+          </p>
+          <span style="display:inline-block;margin-top:8px;font-size:0.85rem;font-weight:700;color:#b45309;">Open Settings →</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Install card (only shown to users on the website, not in the installed app) -->
     <div class="card" id="installCard" style="display:none;border:1px solid #bfdbfe;background:#eff6ff;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
@@ -372,25 +392,34 @@
     <div class="card">
       <div class="card-title">💉 New Blood Pressure Reading</div>
 
-      <div class="form-row">
-        <div class="bp-label-group">
-          <label class="form-label">Systolic</label>
-          <input class="form-control bp-input" type="number" id="sys"
-            min="60" max="300" inputmode="numeric">
-          <div class="bp-unit">mmHg</div>
-        </div>
-        <div class="bp-label-group">
-          <label class="form-label">Diastolic</label>
-          <input class="form-control bp-input" type="number" id="dia"
-            min="30" max="200" inputmode="numeric">
-          <div class="bp-unit">mmHg</div>
-        </div>
-        <div class="bp-label-group">
-          <label class="form-label">Pulse <span style="font-size:0.65rem;font-weight:400;color:var(--muted);">(optional)</span></label>
-          <input class="form-control bp-input" type="number" id="pulse"
-            min="30" max="250" inputmode="numeric">
-          <div class="bp-unit">bpm</div>
-        </div>
+      <p style="font-size:0.85rem;color:var(--muted);line-height:1.5;margin:-4px 0 12px;">
+        Sit and rest quietly for a few minutes, then take <strong>3 readings about a minute apart</strong>. We keep the lowest of the three — relaxing between readings usually gives a truer resting value.
+      </p>
+
+      <div class="reading-row reading-head">
+        <div></div>
+        <div class="form-label" style="text-align:center;">Systolic <span class="reading-unit">mmHg</span></div>
+        <div class="form-label" style="text-align:center;">Diastolic <span class="reading-unit">mmHg</span></div>
+        <div class="form-label" style="text-align:center;">Pulse <span class="reading-unit">bpm · opt.</span></div>
+      </div>
+
+      <div class="reading-row">
+        <div class="reading-num">1</div>
+        <input class="form-control bp-input" type="number" id="sys1" min="60" max="300" inputmode="numeric">
+        <input class="form-control bp-input" type="number" id="dia1" min="30" max="200" inputmode="numeric">
+        <input class="form-control bp-input" type="number" id="pulse1" min="30" max="250" inputmode="numeric">
+      </div>
+      <div class="reading-row">
+        <div class="reading-num">2</div>
+        <input class="form-control bp-input" type="number" id="sys2" min="60" max="300" inputmode="numeric">
+        <input class="form-control bp-input" type="number" id="dia2" min="30" max="200" inputmode="numeric">
+        <input class="form-control bp-input" type="number" id="pulse2" min="30" max="250" inputmode="numeric">
+      </div>
+      <div class="reading-row">
+        <div class="reading-num">3</div>
+        <input class="form-control bp-input" type="number" id="sys3" min="60" max="300" inputmode="numeric">
+        <input class="form-control bp-input" type="number" id="dia3" min="30" max="200" inputmode="numeric">
+        <input class="form-control bp-input" type="number" id="pulse3" min="30" max="250" inputmode="numeric">
       </div>
 
       <div class="form-group">
@@ -437,7 +466,11 @@
       <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;line-height:1.5;">
         A printable 14-day blood pressure diary with space for two morning and two evening readings per day. Patient details are filled in automatically from your Settings.
       </p>
-      <button class="btn btn-secondary btn-block" onclick="printDiary()">🖨️ Open Printable BP Diary</button>
+      <div class="alert alert-warn" id="diaryMissingNotice" style="display:none;margin-bottom:14px;">
+        ⚠️ Please add your <strong>name</strong> and <strong>date of birth</strong> in Settings before downloading the diary — the GP needs these to match it to your record.
+        <button class="btn btn-secondary btn-sm" style="margin-top:10px;" onclick="openSettings()">⚙️ Open Settings</button>
+      </div>
+      <button class="btn btn-secondary btn-block" id="btnPrintDiary" onclick="printDiary()">🖨️ Open Printable BP Diary</button>
     </div>
   </div>
 
@@ -1013,40 +1046,80 @@ function switchTab(tab, btn) {
 // ═══════════════════════════════════════════════
 //  LOG TAB
 // ═══════════════════════════════════════════════
+// Mean arterial pressure — used to pick the lowest of the three readings
+function meanArterial(r) { return r.dia + (r.sys - r.dia) / 3; }
+
+// Read the three reading rows; returns one entry per row (nulls for blanks)
+function getTripleReadings() {
+  const rows = [];
+  for (let i = 1; i <= 3; i++) {
+    const s = document.getElementById('sys' + i).value;
+    const d = document.getElementById('dia' + i).value;
+    const p = document.getElementById('pulse' + i).value;
+    rows.push({
+      sys: s !== '' ? parseInt(s) : null,
+      dia: d !== '' ? parseInt(d) : null,
+      pulse: p !== '' ? parseInt(p) : null
+    });
+  }
+  return rows;
+}
+
+// Readings that have a plausible systolic & diastolic entered
+function validTripleReadings() {
+  return getTripleReadings().filter(r =>
+    r.sys && r.dia && r.sys >= 60 && r.sys <= 300 &&
+    r.dia >= 30 && r.dia <= 200 && r.sys > r.dia);
+}
+
+// The reading with the lowest mean arterial pressure
+function lowestReading(rows) {
+  return rows.reduce((lo, r) => meanArterial(r) < meanArterial(lo) ? r : lo);
+}
+
 // Live preview
-['sys','dia','pulse'].forEach(id=>{
+['sys1','dia1','pulse1','sys2','dia2','pulse2','sys3','dia3','pulse3'].forEach(id=>{
   document.getElementById(id).addEventListener('input', updatePreview);
 });
 
 function updatePreview() {
-  const sys = parseInt(document.getElementById('sys').value);
-  const dia = parseInt(document.getElementById('dia').value);
+  const valid = validTripleReadings();
   const el = document.getElementById('previewBadge');
   const alert = document.getElementById('previewAlert');
-  if (!sys || !dia || sys < 60 || dia < 30) { el.style.display='none'; return; }
-  const cat = classifyBP(sys, dia);
+  if (!valid.length) { el.style.display='none'; return; }
+  const low = lowestReading(valid);
+  const cat = classifyBP(low.sys, low.dia);
+  const lead = valid.length < 3
+    ? `Lowest of ${valid.length} reading${valid.length>1?'s':''} so far — ${low.sys}/${low.dia}: `
+    : `Lowest of 3 — ${low.sys}/${low.dia}: `;
   el.style.display='block';
   alert.className = 'alert';
   alert.style.background = cat.bg;
   alert.style.color = cat.color;
   alert.style.border = `1px solid ${cat.color}44`;
-  alert.innerHTML = `<strong>${cat.name}</strong>${cat.ish?' (Isolated Systolic)':''} — ${cat.advice}`;
+  alert.innerHTML = `<strong>${lead}${cat.name}</strong>${cat.ish?' (Isolated Systolic)':''} — ${cat.advice}`;
 }
 
 function saveReading() {
-  const sys = parseInt(document.getElementById('sys').value);
-  const dia = parseInt(document.getElementById('dia').value);
-  const pulseRaw = document.getElementById('pulse').value;
-  const pulse = pulseRaw !== '' ? parseInt(pulseRaw) : null;
+  const rows = getTripleReadings();
   const dateVal = document.getElementById('readingDate').value;
   const timeVal = document.getElementById('readingTime').value;
   const notes = document.getElementById('notes').value.trim();
 
-  if (!sys || !dia) { showToast('⚠️ Please enter systolic and diastolic.'); return; }
-  if (sys < 60 || sys > 300) { showToast('⚠️ Systolic must be between 60–300 mmHg.'); return; }
-  if (dia < 30 || dia > 200) { showToast('⚠️ Diastolic must be between 30–200 mmHg.'); return; }
-  if (pulse !== null && (pulse < 30 || pulse > 250)) { showToast('⚠️ Pulse must be between 30–250 bpm.'); return; }
-  if (sys <= dia) { showToast('⚠️ Systolic must be greater than diastolic.'); return; }
+  // All three readings must be entered and plausible
+  for (let i = 0; i < 3; i++) {
+    const r = rows[i];
+    const n = i + 1;
+    if (!r.sys || !r.dia) { showToast(`⚠️ Enter systolic & diastolic for reading ${n}.`); return; }
+    if (r.sys < 60 || r.sys > 300) { showToast(`⚠️ Reading ${n}: systolic must be 60–300 mmHg.`); return; }
+    if (r.dia < 30 || r.dia > 200) { showToast(`⚠️ Reading ${n}: diastolic must be 30–200 mmHg.`); return; }
+    if (r.pulse !== null && (r.pulse < 30 || r.pulse > 250)) { showToast(`⚠️ Reading ${n}: pulse must be 30–250 bpm.`); return; }
+    if (r.sys <= r.dia) { showToast(`⚠️ Reading ${n}: systolic must be greater than diastolic.`); return; }
+  }
+
+  // Keep the reading with the lowest mean arterial pressure
+  const low = lowestReading(rows);
+  const sys = low.sys, dia = low.dia, pulse = low.pulse;
 
   let date;
   if (dateVal) {
@@ -1063,9 +1136,8 @@ function saveReading() {
   saveReadings(readings);
 
   // Reset form
-  document.getElementById('sys').value='';
-  document.getElementById('dia').value='';
-  document.getElementById('pulse').value='';
+  ['sys1','dia1','pulse1','sys2','dia2','pulse2','sys3','dia3','pulse3']
+    .forEach(id => document.getElementById(id).value = '');
   document.getElementById('notes').value='';
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
@@ -1073,7 +1145,7 @@ function saveReading() {
   document.getElementById('readingTime').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
   document.getElementById('previewBadge').style.display='none';
 
-  showToast(`✅ Saved — ${cat.name}`);
+  showToast(`✅ Saved lowest of 3 — ${sys}/${dia} · ${cat.name}`);
 }
 
 // ═══════════════════════════════════════════════
@@ -1807,7 +1879,29 @@ function buildDiaryHTML() {
 </body></html>`;
 }
 
+// Reflect whether name + DOB are saved across the UI: the diary download,
+// and the setup prompt at the top of the Log tab.
+function updateDiaryButton() {
+  const ok = hasPatientDetails();
+
+  const btn = document.getElementById('btnPrintDiary');
+  const notice = document.getElementById('diaryMissingNotice');
+  if (btn) {
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? '' : '0.45';
+  }
+  if (notice) notice.style.display = ok ? 'none' : '';
+
+  const prompt = document.getElementById('settingsPromptCard');
+  if (prompt) prompt.style.display = ok ? 'none' : '';
+}
+
 function printDiary() {
+  if (!hasPatientDetails()) {
+    showToast('⚠️ Add your name and date of birth in Settings first.');
+    openSettings();
+    return;
+  }
   const html = buildDiaryHTML();
   const win = window.open('', '_blank');
   if (!win) { showToast('⚠️ Pop-up blocked — please allow pop-ups for this page.'); return; }
@@ -2131,6 +2225,7 @@ function saveSettings() {
   saveSettingsData(s);
   closeSettings();
   updateReportButtons();
+  updateDiaryButton();
   showToast('✅ Settings saved.');
 }
 
@@ -2167,6 +2262,9 @@ function dismissPrivacy() {
   document.getElementById('readingDate').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   document.getElementById('readingTime').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 })();
+
+// Gate the printable diary until name + DOB are saved
+updateDiaryButton();
 
 // Show privacy notice on first visit
 if (!localStorage.getItem(PRIVACY_KEY)) {
