@@ -2057,7 +2057,10 @@ async function emailReport() {
   // (e.g. em-dash) in mailto: URLs and silently drops fields when parsing fails.
   const subject = `Blood Pressure Report - ${s.patientName||'Patient'}`;
   const bodyText =
-`Dear ${s.gpName||'GP'},
+`If the 'To' box is not automatically filled please copy and paste this address to send it to your preferred healthcare professional:
+${gpEmail}
+
+Dear ${s.gpName||'GP'},
 
 I have been monitoring my blood pressure at home. Please find my report attached.
 
