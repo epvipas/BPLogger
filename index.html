@@ -321,6 +321,7 @@
     <button class="desk-nav-btn active" onclick="switchTab('log', this)">📝 Log Reading</button>
     <button class="desk-nav-btn" onclick="switchTab('history', this)">📋 History</button>
     <button class="desk-nav-btn" onclick="switchTab('analysis', this)">📊 Analysis</button>
+    <button class="desk-nav-btn" onclick="switchTab('lifestyle', this)">🌱 Lifestyle</button>
     <button class="desk-nav-btn" onclick="switchTab('report', this)">📧 Report</button>
   </nav>
   <button class="icon-btn" onclick="openSettings()" title="Settings">⚙️</button>
@@ -336,6 +337,9 @@
   </button>
   <button class="nav-btn" id="btn-analysis" onclick="switchTab('analysis', this)">
     <span class="ni">📊</span>Analysis
+  </button>
+  <button class="nav-btn" id="btn-lifestyle" onclick="switchTab('lifestyle', this)">
+    <span class="ni">🌱</span>Lifestyle
   </button>
   <button class="nav-btn" id="btn-report" onclick="switchTab('report', this)">
     <span class="ni">📧</span>Report
@@ -529,6 +533,165 @@
         Source: British and Irish Hypertension Society (BIHS) guidelines, 2023. When systolic and diastolic fall in different categories, the higher category applies.
       </p>
     </div>
+  </div>
+
+  <!-- ══════════════ LIFESTYLE TAB ══════════════ -->
+  <div class="tab-pane" id="pane-lifestyle">
+
+    <div class="alert alert-info" style="margin-bottom:14px;font-size:0.85rem;line-height:1.5;">
+      🩺 <strong>Lifestyle changes work alongside medication, not instead of it.</strong> Never stop or change prescribed blood pressure medicine without speaking to your GP first. Combining several of the changes below can lower BP as much as a tablet.
+    </div>
+
+    <!-- Healthy Eating -->
+    <div class="card">
+      <div class="card-title">🥗 Eat a heart-healthy diet</div>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        A <strong>DASH-style diet</strong> (Dietary Approaches to Stop Hypertension) consistently lowers blood pressure. Build meals around:
+      </p>
+      <ul style="font-size:0.88rem;line-height:1.7;padding-left:20px;margin-bottom:10px;">
+        <li>Plenty of fruit and vegetables — aim for at least 5 portions a day</li>
+        <li>Wholegrains (porridge, brown rice, wholemeal bread)</li>
+        <li>Pulses, beans, nuts and seeds</li>
+        <li>Fish — including oily fish (salmon, mackerel, sardines) twice a week</li>
+        <li>Lower-fat dairy in moderation</li>
+      </ul>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        <strong>Cut down on</strong> processed meats, sugary drinks and snacks, takeaways, and foods high in saturated fat.
+      </p>
+      <p style="font-size:0.78rem;color:var(--muted);">
+        <strong>Typical effect:</strong> systolic BP reduction of 8–14 mmHg with sustained changes. Source: NICE NG136; DASH trial (NEJM 1997).
+      </p>
+    </div>
+
+    <!-- Reduce Salt -->
+    <div class="card">
+      <div class="card-title">🧂 Eat less salt</div>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        UK adults eat too much salt — about 8 g per day on average. The NHS recommends <strong>no more than 6 g per day</strong> (roughly a level teaspoon). Most of it is hidden in packaged food, not what you add at the table.
+      </p>
+      <ul style="font-size:0.88rem;line-height:1.7;padding-left:20px;margin-bottom:10px;">
+        <li>Don't add salt during cooking or at the table — use herbs, spices, lemon, garlic and pepper for flavour</li>
+        <li>Check food labels — <strong>≤0.3 g salt per 100 g is "low"</strong>; ≥1.5 g per 100 g is "high"</li>
+        <li>The biggest contributors are bread, processed and cured meats, cheese, ready meals, crisps, soy sauce and stock cubes</li>
+      </ul>
+      <p style="font-size:0.78rem;color:var(--muted);">
+        <strong>Typical effect:</strong> 5–6 mmHg systolic reduction. Source: NHS; SACN Salt and Health report.
+      </p>
+    </div>
+
+    <!-- Physical Activity -->
+    <div class="card">
+      <div class="card-title">🏃 Be more active</div>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        UK Chief Medical Officers' guidance for adults:
+      </p>
+      <ul style="font-size:0.88rem;line-height:1.7;padding-left:20px;margin-bottom:10px;">
+        <li><strong>150 minutes of moderate activity per week</strong> (brisk walking, cycling, swimming, gardening) — for example 30 minutes on 5 days, OR</li>
+        <li><strong>75 minutes of vigorous activity per week</strong> (running, sports, fast cycling)</li>
+        <li>Plus <strong>muscle-strengthening activities on 2 or more days</strong> (lifting, gardening, yoga, body-weight exercises)</li>
+      </ul>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        Activity can be broken into 10-minute bouts — anything counts. Even reducing time sitting helps. Start small and build up gradually if you've been inactive.
+      </p>
+      <p style="font-size:0.78rem;color:var(--muted);">
+        <strong>Typical effect:</strong> 5–8 mmHg systolic reduction. Source: UK CMO Physical Activity Guidelines; NICE NG136.
+      </p>
+    </div>
+
+    <!-- Weight -->
+    <div class="card">
+      <div class="card-title">⚖️ Reach a healthier weight</div>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        Carrying extra weight makes the heart work harder. Each <strong>1 kg of weight loss</strong> typically lowers blood pressure by around <strong>1 mmHg</strong>. Aim for a BMI of 18.5–24.9, or a waist measurement under <strong>94 cm for men</strong> / <strong>80 cm for women</strong> (lower thresholds apply for some ethnic groups).
+      </p>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        Losing weight gradually (0.5–1 kg per week) and combining diet changes with activity gives the best long-term results. Your GP can refer you to the NHS Weight Management Service or the NHS Digital Weight Management Programme if it would help.
+      </p>
+      <p style="font-size:0.78rem;color:var(--muted);">Source: NICE NG189 (obesity); British Heart Foundation.</p>
+    </div>
+
+    <!-- Alcohol -->
+    <div class="card">
+      <div class="card-title">🍷 Cut down on alcohol</div>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        The UK Chief Medical Officers' low-risk guideline is <strong>no more than 14 units per week</strong>, spread over <strong>3 or more days</strong>, with several <strong>alcohol-free days</strong>. Drinking less is always better; there is no completely safe level.
+      </p>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:8px;"><strong>A rough guide to units:</strong></p>
+      <ul style="font-size:0.88rem;line-height:1.7;padding-left:20px;margin-bottom:10px;">
+        <li>Single measure (25 ml) of spirits = 1 unit</li>
+        <li>Small (125 ml) glass of wine = 1.5 units</li>
+        <li>Pint of standard-strength (4%) lager = 2.3 units</li>
+        <li>Pint of higher-strength (5.2%) beer = 3 units</li>
+      </ul>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        Heavy or binge drinking strongly raises blood pressure — cutting back is one of the most effective single changes you can make.
+      </p>
+      <p style="font-size:0.78rem;color:var(--muted);">
+        <strong>Typical effect:</strong> around 4 mmHg systolic reduction with sustained cuts in heavy drinkers. Source: UK CMO Low Risk Drinking Guidelines; NICE NG136.
+      </p>
+    </div>
+
+    <!-- Smoking -->
+    <div class="card">
+      <div class="card-title">🚭 Stop smoking</div>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        Each cigarette causes a temporary spike in blood pressure, and smoking is one of the biggest risk factors for heart attack, stroke and many cancers — independently of your blood pressure. Stopping is the single best thing most smokers can do for their health.
+      </p>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;"><strong>Free NHS help is available:</strong></p>
+      <ul style="font-size:0.88rem;line-height:1.7;padding-left:20px;margin-bottom:10px;">
+        <li>NHS Quit Smoking app and online support (search <em>NHS Better Health Quit Smoking</em>)</li>
+        <li>Ask your GP or pharmacist for a referral to local Stop Smoking Services</li>
+        <li>Nicotine replacement therapy (patches, gum, lozenges) and licensed vapes substantially improve your chance of quitting for good</li>
+      </ul>
+      <p style="font-size:0.78rem;color:var(--muted);">Source: NICE NG209 (tobacco); NHS Better Health.</p>
+    </div>
+
+    <!-- Caffeine -->
+    <div class="card">
+      <div class="card-title">☕ Watch caffeine</div>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        Caffeine causes a short-lived rise in blood pressure for most people. The effect on long-term BP is small, but if you drink a lot of coffee or energy drinks, cutting back is worth trying.
+      </p>
+      <ul style="font-size:0.88rem;line-height:1.7;padding-left:20px;margin-bottom:10px;">
+        <li>Keep to <strong>fewer than 4 cups of coffee per day</strong> (or the equivalent in tea, cola or energy drinks)</li>
+        <li><strong>Avoid caffeine for 30 minutes before measuring your BP</strong> — it can raise the reading by 5–10 mmHg</li>
+      </ul>
+      <p style="font-size:0.78rem;color:var(--muted);">Source: British and Irish Hypertension Society guidance on home BP measurement.</p>
+    </div>
+
+    <!-- Sleep & Stress -->
+    <div class="card">
+      <div class="card-title">😴 Look after sleep and stress</div>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        Long-term stress and poor sleep both push blood pressure up. There's no single fix, but small changes add up:
+      </p>
+      <ul style="font-size:0.88rem;line-height:1.7;padding-left:20px;margin-bottom:10px;">
+        <li>Aim for <strong>7–9 hours of sleep</strong> a night with a regular bedtime</li>
+        <li>Build in regular short breaks during the day; a daily walk outdoors helps mood as well as BP</li>
+        <li>NHS-recommended apps for relaxation and mindfulness include Headspace and Calm (search the NHS Apps Library)</li>
+        <li>If you <strong>snore loudly and feel sleepy during the day</strong>, ask your GP about obstructive sleep apnoea — a common, treatable cause of high BP</li>
+      </ul>
+      <p style="font-size:0.78rem;color:var(--muted);">Source: NHS Every Mind Matters; NICE NG202 (sleep apnoea).</p>
+    </div>
+
+    <!-- Urgent -->
+    <div class="card" style="border-left:4px solid #b91c1c;">
+      <div class="card-title" style="color:#b91c1c;">🚨 When to get urgent help</div>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
+        <strong>Contact your GP urgently (or NHS 111) if your home BP is consistently 180/120 mmHg or higher</strong>, even if you feel well.
+      </p>
+      <p style="font-size:0.88rem;line-height:1.6;margin-bottom:0;">
+        <strong>Call 999 immediately</strong> if a high reading is accompanied by chest pain, breathlessness, severe headache, vision changes, weakness on one side of the body, or difficulty speaking — these can be signs of a stroke or heart attack.
+      </p>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="card" style="background:#f8fafc;">
+      <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin:0;">
+        This information is for general guidance only and does not replace personalised advice from your GP, pharmacist or specialist. Sources: National Institute for Health and Care Excellence (NICE NG136 — hypertension in adults), British and Irish Hypertension Society guidelines, NHS, UK Chief Medical Officers' guidelines, SACN.
+      </p>
+    </div>
+
   </div>
 
   <!-- ══════════════ REPORT TAB ══════════════ -->
