@@ -1,6 +1,6 @@
 // Bump CACHE_VERSION whenever index.html or any cached asset changes so
 // returning users see the new build instead of the stale cached one.
-const CACHE_VERSION = 'bp-logger-v2';
+const CACHE_VERSION = 'bp-logger-v3';
 const CORE_ASSETS = [
   '/',
   '/index.html',

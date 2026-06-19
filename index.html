@@ -537,9 +537,14 @@
     <div class="card">
       <div class="card-title">📄 GP Report</div>
 
+      <div class="alert alert-warn" id="reportMissingNotice" style="display:none;">
+        ⚠️ Please add your <strong>name</strong> and <strong>date of birth</strong> in Settings before generating a report — the GP needs these to match the report to your record.
+        <button class="btn btn-secondary btn-sm" style="margin-top:10px;" onclick="openSettings()">⚙️ Open Settings</button>
+      </div>
+
       <div class="form-group">
         <label class="form-label">GP Email <span style="font-weight:400;font-size:0.8em;color:var(--muted);">(required to send to GP)</span></label>
-        <input class="form-control" type="email" id="reportGpEmail" placeholder="e.g. practice@nhs.net" oninput="updateSendGPButton()">
+        <input class="form-control" type="email" id="reportGpEmail" placeholder="e.g. practice@nhs.net" oninput="updateReportButtons()">
       </div>
 
       <div class="form-group">
@@ -556,12 +561,12 @@
       </div>
 
       <div class="btn-group" style="margin-top:4px;">
-        <button class="btn btn-primary" style="flex:1;" onclick="generatePDF()">🖨️ Save as PDF</button>
+        <button class="btn btn-primary" id="btnSavePDF" style="flex:1;" onclick="generatePDF()" disabled>🖨️ Save as PDF</button>
         <button class="btn btn-secondary" id="btnSendGP" style="flex:1;" onclick="emailReport()" disabled>📧 Send PDF to GP</button>
       </div>
       <div class="alert alert-info" style="margin-top:12px;font-size:0.78rem;">
         <strong>Save as PDF</strong> opens the report in a new tab — choose "Save as PDF" in the print dialog to download.<br>
-        <strong>Send PDF to GP</strong> generates a PDF of your report. On a phone or tablet, a share menu opens — pick your email app and the PDF is attached automatically. On desktop, the PDF downloads and your email app opens with a cover message — just attach the downloaded PDF before clicking Send.
+        <strong>Send PDF to GP</strong> generates a PDF of your report and opens your email app with the GP's address pre-filled.
       </div>
     </div>
   </div>
@@ -578,12 +583,12 @@
 
     <div class="card-title" style="font-size:0.8rem;margin-bottom:10px;">Patient Details</div>
     <div class="form-group">
-      <label class="form-label">Full Name</label>
-      <input class="form-control" id="sPatientName" placeholder="e.g. Jane Smith">
+      <label class="form-label">Full Name <span style="color:#b91c1c;">*</span></label>
+      <input class="form-control" id="sPatientName" placeholder="e.g. Jane Smith" required>
     </div>
     <div class="form-group">
-      <label class="form-label">Date of Birth</label>
-      <input class="form-control" type="date" id="sDob">
+      <label class="form-label">Date of Birth <span style="color:#b91c1c;">*</span></label>
+      <input class="form-control" type="date" id="sDob" required>
     </div>
     <div class="form-group">
       <label class="form-label">NHS Number (optional)</label>
@@ -695,7 +700,15 @@
     <a id="emailStepOpenLink" href="#" style="display:none;" onclick="closeEmailStepSoon()"></a>
 
     <div class="alert alert-warn" style="font-size:0.78rem;margin-bottom:0;line-height:1.5;">
-      <strong>What happens next:</strong> Outlook will open with the recipient and subject pre-filled. The message body is on your clipboard — click in the email body and press <strong>Ctrl+V</strong> to paste it. Then attach <code id="emailStepFilenameInline" style="font-size:0.78rem;"></code> from your Downloads folder and click Send.
+      <strong>What happens next:</strong>
+      <ol style="padding-left:20px;margin-top:6px;line-height:1.55;">
+        <li>Your email app will open. <strong>If your device asks which app to use, choose your usual email app</strong> (e.g. Gmail, Outlook, Apple Mail). On Android you can tap "Always" to set it as the default.</li>
+        <li>The recipient and subject are pre-filled. Click in the message area and press <strong>Ctrl+V</strong> (or long-press → Paste on mobile) — the body has been copied to your clipboard.</li>
+        <li>Attach <code id="emailStepFilenameInline" style="font-size:0.78rem;"></code> from your Downloads folder, then click Send.</li>
+      </ol>
+      <p style="margin:8px 0 0;font-size:0.76rem;color:var(--muted);">
+        Nothing happens when you click Open Email? Your device has no default email app set. Open your email app manually and use the 📋 buttons above to copy each field in.
+      </p>
     </div>
   </div>
 </div>
@@ -1259,7 +1272,12 @@ function renderReport() {
   const s = getSettings();
   const emailEl = document.getElementById('reportGpEmail');
   if (emailEl && !emailEl.value) emailEl.value = s.gpEmail || SURGERY_CONFIG.email || '';
-  updateSendGPButton();
+  updateReportButtons();
+}
+
+function hasPatientDetails() {
+  const s = getSettings();
+  return !!(s.patientName && s.patientName.trim() && s.dob);
 }
 
 function buildReportHTML() {
@@ -1638,13 +1656,24 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function updateSendGPButton() {
+function updateReportButtons() {
   const emailInput = document.getElementById('reportGpEmail');
-  const btn = document.getElementById('btnSendGP');
-  if (!emailInput || !btn) return;
-  const valid = isValidEmail(emailInput.value.trim());
-  btn.disabled = !valid;
-  btn.style.opacity = valid ? '' : '0.45';
+  const sendBtn = document.getElementById('btnSendGP');
+  const pdfBtn = document.getElementById('btnSavePDF');
+  const notice = document.getElementById('reportMissingNotice');
+  if (!emailInput || !sendBtn || !pdfBtn) return;
+
+  const detailsOk = hasPatientDetails();
+  const emailOk = isValidEmail(emailInput.value.trim());
+
+  notice.style.display = detailsOk ? 'none' : '';
+
+  pdfBtn.disabled = !detailsOk;
+  pdfBtn.style.opacity = detailsOk ? '' : '0.45';
+
+  const canSend = detailsOk && emailOk;
+  sendBtn.disabled = !canSend;
+  sendBtn.style.opacity = canSend ? '' : '0.45';
 }
 
 function loadScript(src) {
@@ -1760,7 +1789,7 @@ async function emailReport() {
     showToast('⚠️ Could not generate PDF. Check your internet connection, or use "Save as PDF".');
     return;
   }
-  if (btn) { btn.innerHTML = origLabel; btn.disabled = false; updateSendGPButton(); }
+  if (btn) { btn.innerHTML = origLabel; btn.disabled = false; updateReportButtons(); }
   if (!blob) return;
 
   const filename = `bp-report-${(s.patientName||'patient').replace(/\s+/g,'-').toLowerCase()}.pdf`;
@@ -1924,16 +1953,21 @@ function saveSettings() {
   } else {
     gpName = document.getElementById('sGpName').value.trim();
   }
+  const patientName = document.getElementById('sPatientName').value.trim();
+  const dob = document.getElementById('sDob').value;
+  if (!patientName) { showToast('⚠️ Please enter your full name.'); return; }
+  if (!dob) { showToast('⚠️ Please enter your date of birth.'); return; }
+
   const s = {
-    patientName: document.getElementById('sPatientName').value.trim(),
-    dob:         document.getElementById('sDob').value,
+    patientName,
+    dob,
     nhs:         document.getElementById('sNhs').value.trim(),
     gpName,
     gpEmail:     document.getElementById('sGpEmail').value.trim(),
   };
   saveSettingsData(s);
   closeSettings();
-  updateSendGPButton();
+  updateReportButtons();
   showToast('✅ Settings saved.');
 }
 
