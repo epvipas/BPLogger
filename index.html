@@ -393,7 +393,7 @@
       <div class="card-title">💉 New Blood Pressure Reading</div>
 
       <p style="font-size:0.85rem;color:var(--muted);line-height:1.5;margin:-4px 0 12px;">
-        Sit and rest quietly for a few minutes, then take <strong>3 readings about a minute apart</strong>. We keep the lowest of the three — relaxing between readings usually gives a truer resting value.
+        Sit and rest quietly for a few minutes, then take <strong>3 readings about a minute apart</strong>. Following NICE and British and Irish Hypertension Society guidance, the <strong>first reading is discarded</strong> and the 2nd and 3rd are averaged for your result.
       </p>
 
       <div class="reading-row reading-head">
@@ -458,6 +458,9 @@
       <div class="alert alert-info" style="font-size:0.78rem;">
         <strong>Home monitoring:</strong> Home readings ≥135/85 mmHg indicate hypertension (equivalent to clinic ≥140/90 mmHg) — <em>British and Irish Hypertension Society 2023</em>
       </div>
+      <p style="font-size:0.75rem;color:var(--muted);line-height:1.5;margin-top:10px;">
+        Classifications shown here and in your reports are <strong>indicative only</strong> and do not replace assessment by your GP, who interprets your readings alongside your wider health.
+      </p>
     </div>
 
     <!-- Printable paper diary -->
@@ -555,15 +558,17 @@
             <tr><td style="color:#16a34a">Normal</td><td>120–129</td><td>80–84</td><td>—</td></tr>
             <tr><td style="color:#b45309">High-Normal</td><td>130–139</td><td>85–89</td><td>&lt; 135/85 (normal)</td></tr>
             <tr><td style="color:#c2410c">Grade 1 HTN</td><td>140–159</td><td>90–99</td><td>≥ 135/85</td></tr>
-            <tr><td style="color:#b91c1c">Grade 2 HTN</td><td>160–179</td><td>100–109</td><td>≥ 150/95</td></tr>
-            <tr><td style="color:#7c3aed">Grade 3 HTN</td><td>≥ 180</td><td>≥ 110</td><td>≥ 180/110</td></tr>
+            <tr><td style="color:#b91c1c">Grade 2 HTN</td><td>160–179</td><td>100–109</td><td>—†</td></tr>
+            <tr><td style="color:#7c3aed">Grade 3 HTN</td><td>≥ 180</td><td>≥ 110</td><td>—†</td></tr>
             <tr><td style="color:#c2410c">Isolated Systolic HTN</td><td>≥ 140</td><td>&lt; 90</td><td>≥ 135 systolic</td></tr>
           </tbody>
         </table>
       </div>
       <div class="divider"></div>
       <p style="font-size:0.75rem;color:var(--muted);">
-        Source: British and Irish Hypertension Society (BIHS) guidelines, 2023. When systolic and diastolic fall in different categories, the higher category applies.
+        Source: British and Irish Hypertension Society (BIHS) guidelines, 2023. When systolic and diastolic fall in different categories, the higher category applies.<br>
+        † A home-monitoring equivalent is formally defined only at the diagnostic threshold (clinic 140/90 mmHg = home average 135/85 mmHg). There are no established home equivalents for the higher grades.<br>
+        These classifications are indicative only and do not replace assessment by your GP.
       </p>
     </div>
   </div>
@@ -640,7 +645,7 @@
       <p style="font-size:0.88rem;line-height:1.6;margin-bottom:10px;">
         Losing weight gradually (0.5–1 kg per week) and combining diet changes with activity gives the best long-term results. Your GP can refer you to the NHS Weight Management Service or the NHS Digital Weight Management Programme if it would help.
       </p>
-      <p style="font-size:0.78rem;color:var(--muted);">Source: NICE NG189 (obesity); British Heart Foundation.</p>
+      <p style="font-size:0.78rem;color:var(--muted);">Source: NICE CG189 (obesity: identification, assessment and management); British Heart Foundation.</p>
     </div>
 
     <!-- Alcohol -->
@@ -689,7 +694,7 @@
         <li>Keep to <strong>fewer than 4 cups of coffee per day</strong> (or the equivalent in tea, cola or energy drinks)</li>
         <li><strong>Avoid caffeine for 30 minutes before measuring your BP</strong> — it can raise the reading by 5–10 mmHg</li>
       </ul>
-      <p style="font-size:0.78rem;color:var(--muted);">Source: British and Irish Hypertension Society guidance on home BP measurement.</p>
+      <p style="font-size:0.78rem;color:var(--muted);">Source: NHS and British and Irish Hypertension Society guidance on home BP measurement.</p>
     </div>
 
     <!-- Sleep & Stress -->
@@ -764,8 +769,18 @@
         <strong>Save as PDF</strong> opens the report in a new tab — choose "Save as PDF" in the print dialog to download.<br>
         <strong>Send PDF to GP</strong> generates a PDF of your report and opens your email app with the GP's address pre-filled.
       </div>
+      <div class="alert alert-warn" style="margin-top:10px;font-size:0.78rem;">
+        🔐 Your report contains identifiable health information (name, date of birth, NHS number and readings). Send it only to a secure NHS address (one ending in <strong>@nhs.net</strong>). Ordinary email is not always secure — if you would rather not email it, you can save the PDF or printable diary and bring it to your appointment. Once your practice receives a copy, the practice is responsible for it.
+      </div>
     </div>
   </div>
+
+  <!-- ══════════════ ABOUT / PUBLISHER FOOTER ══════════════ -->
+  <footer id="appFooter" style="max-width:680px;margin:24px auto 0;padding:16px;font-size:0.72rem;color:var(--muted);line-height:1.6;text-align:center;">
+    <span id="footerPublisher"></span>
+    BP Logger is a self-monitoring aid to help you record home blood-pressure readings and share them with your GP. It does not diagnose conditions or recommend treatment — all clinical decisions rest with your GP. Your data stays on this device; the provider cannot see it.<br>
+    <span id="footerReviewed"></span>
+  </footer>
 
 </main>
 
@@ -914,8 +929,11 @@
   <div class="modal" style="max-width:420px;text-align:center;">
     <div style="font-size:2.2rem;margin-bottom:10px;">🔒</div>
     <div class="modal-title" style="justify-content:center;">Your data stays on your device</div>
-    <p style="font-size:0.88rem;color:var(--text);line-height:1.6;margin-bottom:20px;">
-      This app uses the browser storage on your own device. No data is stored on this site or sent anywhere else unless you export and send reports to your GP or any other party.
+    <p style="font-size:0.88rem;color:var(--text);line-height:1.6;margin-bottom:14px;">
+      This app stores your readings and details only in your browser, on this device. Nothing is sent to a server, and <strong>the people who provided this app cannot see your data</strong>. Information leaves your device only if you choose to export or email a report — for example to your GP.
+    </p>
+    <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:20px;">
+      An emailed report contains identifiable health information, so send it only to a secure NHS (@nhs.net) address. You can delete everything any time from Settings → Clear All Data.
     </p>
     <button class="btn btn-primary btn-block" onclick="dismissPrivacy()">Got it</button>
   </div>
@@ -961,7 +979,7 @@ function classifyBP(sys, dia) {
     { name:'Grade 2 Hypertension',color:'#b91c1c', bg:'#fef2f2', grade:5,
       advice:'This reading is in the moderate hypertension range. Take a moment to relax, sit quietly, and repeat the reading after a few minutes. Discuss these readings with your GP when you next speak with them.' },
     { name:'Grade 3 Hypertension',color:'#7c3aed', bg:'#faf5ff', grade:6,
-      advice:'This reading is on the higher end. Please sit quietly, try to relax, and repeat the reading after five minutes. If repeated readings remain at this level, contact your GP to discuss them.' },
+      advice:'This reading is in the severe range. Please sit quietly, try to relax, and repeat the reading after five minutes. If repeated readings are 180/120 mmHg or higher — or you feel unwell — contact your GP urgently or call NHS 111 the same day, even if you feel well. Call 999 if you have chest pain, breathlessness, a severe headache, vision changes, or weakness or difficulty speaking.' },
   ];
 
   let sGrade, dGrade;
@@ -995,9 +1013,9 @@ function classifyBP(sys, dia) {
 }
 
 function classifyPulse(bpm) {
-  if (bpm < 60) return { label: 'Bradycardia', color: '#2563eb' };
+  if (bpm < 60) return { label: 'Below 60 bpm', color: '#2563eb' };
   if (bpm <= 100) return { label: 'Normal', color: '#15803d' };
-  return { label: 'Tachycardia', color: '#b91c1c' };
+  return { label: 'Above 100 bpm', color: '#b91c1c' };
 }
 
 // ═══════════════════════════════════════════════
@@ -1046,9 +1064,6 @@ function switchTab(tab, btn) {
 // ═══════════════════════════════════════════════
 //  LOG TAB
 // ═══════════════════════════════════════════════
-// Mean arterial pressure — used to pick the lowest of the three readings
-function meanArterial(r) { return r.dia + (r.sys - r.dia) / 3; }
-
 // Read the three reading rows; returns one entry per row (nulls for blanks)
 function getTripleReadings() {
   const rows = [];
@@ -1072,10 +1087,23 @@ function validTripleReadings() {
     r.dia >= 30 && r.dia <= 200 && r.sys > r.dia);
 }
 
-// The reading with the lowest mean arterial pressure
-function lowestReading(rows) {
-  return rows.reduce((lo, r) => meanArterial(r) < meanArterial(lo) ? r : lo);
+// Average the readings, discarding the first (NICE NG136 / BIHS protocol:
+// the first reading is typically higher and is discarded). Expects rows in the
+// order taken. With one reading only, it is used as-is (nothing to discard).
+function averagedReading(rows) {
+  const kept = rows.length > 1 ? rows.slice(1) : rows;
+  const avg = list => Math.round(list.reduce((a, b) => a + b, 0) / list.length);
+  const pulses = kept.map(r => r.pulse).filter(p => p != null && !isNaN(p));
+  return {
+    sys: avg(kept.map(r => r.sys)),
+    dia: avg(kept.map(r => r.dia)),
+    pulse: pulses.length ? avg(pulses) : null,
+  };
 }
+
+// A reading is in the urgent (severe hypertension) range at ≥180/120 mmHg.
+function isUrgent(sys, dia) { return sys >= 180 || dia >= 120; }
+const URGENT_HTML = '🚨 <strong>This is a very high reading.</strong> If repeated readings are 180/120 mmHg or higher, contact your GP urgently or call NHS 111 — even if you feel well. <strong>Call 999</strong> if you also have chest pain, breathlessness, a severe headache, vision changes, or weakness or numbness on one side or difficulty speaking.';
 
 // Live preview
 ['sys1','dia1','pulse1','sys2','dia2','pulse2','sys3','dia3','pulse3'].forEach(id=>{
@@ -1087,17 +1115,21 @@ function updatePreview() {
   const el = document.getElementById('previewBadge');
   const alert = document.getElementById('previewAlert');
   if (!valid.length) { el.style.display='none'; return; }
-  const low = lowestReading(valid);
-  const cat = classifyBP(low.sys, low.dia);
-  const lead = valid.length < 3
-    ? `Lowest of ${valid.length} reading${valid.length>1?'s':''} so far — ${low.sys}/${low.dia}: `
-    : `Lowest of 3 — ${low.sys}/${low.dia}: `;
+  const avgR = averagedReading(valid);
+  const cat = classifyBP(avgR.sys, avgR.dia);
+  let lead;
+  if (valid.length >= 3)      lead = `Average of readings 2 & 3 — ${avgR.sys}/${avgR.dia}: `;
+  else if (valid.length === 2) lead = `Reading 2 (1st discarded) — ${avgR.sys}/${avgR.dia}: `;
+  else                         lead = `1 reading so far — ${avgR.sys}/${avgR.dia}: `;
   el.style.display='block';
   alert.className = 'alert';
   alert.style.background = cat.bg;
   alert.style.color = cat.color;
   alert.style.border = `1px solid ${cat.color}44`;
-  alert.innerHTML = `<strong>${lead}${cat.name}</strong>${cat.ish?' (Isolated Systolic)':''} — ${cat.advice}`;
+  const urgent = isUrgent(avgR.sys, avgR.dia)
+    ? `<div style="margin-top:10px;padding:10px;border-radius:8px;background:#fef2f2;color:#b91c1c;border:1px solid #b91c1c66;font-size:0.85rem;line-height:1.5;">${URGENT_HTML}</div>`
+    : '';
+  alert.innerHTML = `<strong>${lead}${cat.name}</strong>${cat.ish?' (Isolated Systolic)':''} — ${cat.advice}${urgent}`;
 }
 
 function saveReading() {
@@ -1117,9 +1149,9 @@ function saveReading() {
     if (r.sys <= r.dia) { showToast(`⚠️ Reading ${n}: systolic must be greater than diastolic.`); return; }
   }
 
-  // Keep the reading with the lowest mean arterial pressure
-  const low = lowestReading(rows);
-  const sys = low.sys, dia = low.dia, pulse = low.pulse;
+  // Discard the first reading and average readings 2 & 3 (NICE / BIHS protocol)
+  const avgR = averagedReading(rows);
+  const sys = avgR.sys, dia = avgR.dia, pulse = avgR.pulse;
 
   let date;
   if (dateVal) {
@@ -1145,7 +1177,10 @@ function saveReading() {
   document.getElementById('readingTime').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
   document.getElementById('previewBadge').style.display='none';
 
-  showToast(`✅ Saved lowest of 3 — ${sys}/${dia} · ${cat.name}`);
+  showToast(`✅ Saved (avg of readings 2 & 3) — ${sys}/${dia} · ${cat.name}`);
+  if (isUrgent(sys, dia)) {
+    setTimeout(() => alert('🚨 This is a very high reading (180/120 mmHg or higher).\n\nIf repeated readings are this high, contact your GP urgently or call NHS 111 — even if you feel well.\n\nCall 999 now if you also have chest pain, breathlessness, a severe headache, vision changes, weakness or numbness on one side, or difficulty speaking.'), 300);
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1378,9 +1413,9 @@ function renderAnalysis() {
             borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.08)',
             fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2,
           },
-          { label: 'Bradycardia (<60)', data: pulseReadings.map(()=>60),
+          { label: 'Below 60 bpm', data: pulseReadings.map(()=>60),
             borderColor:'#2563eb', borderDash:[4,4], borderWidth:1.2, pointRadius:0, fill:false },
-          { label: 'Tachycardia (>100)', data: pulseReadings.map(()=>100),
+          { label: 'Above 100 bpm', data: pulseReadings.map(()=>100),
             borderColor:'#b91c1c', borderDash:[4,4], borderWidth:1.2, pointRadius:0, fill:false },
         ],
       },
@@ -1712,15 +1747,16 @@ function buildReportHTML() {
       <tr><td style="color:#16a34a;font-weight:600;">Normal</td><td>120–129</td><td>80–84</td><td>—</td></tr>
       <tr><td style="color:#b45309;font-weight:600;">High-Normal</td><td>130–139</td><td>85–89</td><td>&lt; 135/85 (normal)</td></tr>
       <tr><td style="color:#c2410c;font-weight:600;">Grade 1 Hypertension</td><td>140–159</td><td>90–99</td><td>≥ 135/85</td></tr>
-      <tr><td style="color:#b91c1c;font-weight:600;">Grade 2 Hypertension</td><td>160–179</td><td>100–109</td><td>≥ 150/95</td></tr>
-      <tr><td style="color:#7c3aed;font-weight:600;">Grade 3 Hypertension</td><td>≥ 180</td><td>≥ 110</td><td>≥ 180/110</td></tr>
+      <tr><td style="color:#b91c1c;font-weight:600;">Grade 2 Hypertension</td><td>160–179</td><td>100–109</td><td>—†</td></tr>
+      <tr><td style="color:#7c3aed;font-weight:600;">Grade 3 Hypertension</td><td>≥ 180</td><td>≥ 110</td><td>—†</td></tr>
     </tbody>
   </table>
+  <p style="font-size:0.72rem;color:#64748b;margin-top:6px;">† A home-monitoring equivalent is formally defined only at the diagnostic threshold (clinic 140/90 mmHg = home average 135/85 mmHg); no home equivalents are established for the higher grades. Home readings were recorded as the average of the 2nd and 3rd of three readings (1st discarded), per NICE NG136 / BIHS.</p>
 
   <div class="footer">
     Source: British and Irish Hypertension Society (BIHS) Guidelines, 2023 &nbsp;·&nbsp;
     Generated by BP Logger &nbsp;·&nbsp;
-    This report is provided for informational purposes only and does not constitute medical advice.
+    This report is provided for informational purposes only and does not constitute medical advice. Classifications are indicative only; clinical interpretation rests with the GP.
   </div>
 </div>
 </body></html>`;
@@ -1865,10 +1901,11 @@ function buildDiaryHTML() {
       <tr><td style="color:#16a34a;font-weight:600;">Normal</td><td>120–129</td><td>80–84</td><td>—</td></tr>
       <tr><td style="color:#b45309;font-weight:600;">High-Normal</td><td>130–139</td><td>85–89</td><td>&lt; 135/85 (normal)</td></tr>
       <tr><td style="color:#c2410c;font-weight:600;">Grade 1 Hypertension</td><td>140–159</td><td>90–99</td><td>≥ 135/85</td></tr>
-      <tr><td style="color:#b91c1c;font-weight:600;">Grade 2 Hypertension</td><td>160–179</td><td>100–109</td><td>≥ 150/95</td></tr>
-      <tr><td style="color:#7c3aed;font-weight:600;">Grade 3 Hypertension</td><td>≥ 180</td><td>≥ 110</td><td>≥ 180/110</td></tr>
+      <tr><td style="color:#b91c1c;font-weight:600;">Grade 2 Hypertension</td><td>160–179</td><td>100–109</td><td>—†</td></tr>
+      <tr><td style="color:#7c3aed;font-weight:600;">Grade 3 Hypertension</td><td>≥ 180</td><td>≥ 110</td><td>—†</td></tr>
     </tbody>
   </table>
+  <p style="font-size:0.72rem;color:#64748b;margin-top:6px;">† A home-monitoring equivalent is formally defined only at the diagnostic threshold (clinic 140/90 mmHg = home average 135/85 mmHg); no home equivalents are established for the higher grades.</p>
 
   <div class="footer">
     Source: British and Irish Hypertension Society (BIHS) Guidelines, 2023 &nbsp;·&nbsp;
@@ -2239,12 +2276,19 @@ function onGpSelectChange() {
 }
 
 function confirmClearData() {
-  if (!confirm('This will permanently delete ALL your blood pressure readings. This cannot be undone. Are you sure?')) return;
-  if (!confirm('Are you absolutely sure? All readings will be lost.')) return;
+  if (!confirm('This will permanently delete ALL your data on this device — your blood pressure readings AND your saved personal details (name, date of birth, NHS number, GP). This cannot be undone. Are you sure?')) return;
+  if (!confirm('Are you absolutely sure? All readings and personal details will be lost.')) return;
   localStorage.removeItem(STORE_KEY);
+  localStorage.removeItem(SETTINGS_KEY);
   closeSettings();
+  // Clear the Settings form fields so nothing identifiable lingers on screen
+  ['sPatientName','sDob','sNhs','sGpName','sGpEmail'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
   renderHistory();
-  showToast('🗑️ All readings deleted.');
+  updateReportButtons();
+  updateDiaryButton();
+  showToast('🗑️ All readings and personal details deleted.');
 }
 
 // ═══════════════════════════════════════════════
@@ -2264,6 +2308,19 @@ function dismissPrivacy() {
   const pad = n => String(n).padStart(2,'0');
   document.getElementById('readingDate').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   document.getElementById('readingTime').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+})();
+
+// Populate the About / publisher footer from SURGERY_CONFIG
+(function() {
+  const pub = document.getElementById('footerPublisher');
+  if (pub && SURGERY_CONFIG.name) {
+    pub.innerHTML = `Provided by <strong>${SURGERY_CONFIG.name}</strong>` +
+      (SURGERY_CONFIG.address ? `, ${SURGERY_CONFIG.address}` : '') +
+      (SURGERY_CONFIG.email ? ` · <a href="mailto:${SURGERY_CONFIG.email}" style="color:inherit;">${SURGERY_CONFIG.email}</a>` : '') + '. ';
+  }
+  const rev = document.getElementById('footerReviewed');
+  // Update this date whenever the clinical content is reviewed.
+  if (rev) rev.textContent = 'Clinical content last reviewed: June 2026.';
 })();
 
 // Gate the printable diary until name + DOB are saved
