@@ -2130,13 +2130,28 @@ ${s.patientName||''}`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  // Revoke quickly: Outlook on Windows (invoked via mailto: from Chromium) can
-  // grab the most-recently-active blob URL and attach it as an empty "no_name"
-  // file. Once the download is initiated the browser holds its own reference,
-  // so revoking the URL early doesn't cancel it.
-  setTimeout(() => URL.revokeObjectURL(url), 500);
+  // Keep the blob URL alive until the file has certainly finished downloading.
+  // Revoking too early (the old 500ms) races the browser's write-to-disk and
+  // truncates the download to 0 bytes in Firefox/Safari (Chromium happens to
+  // hold its own reference, which is why this only bit some desktops). We
+  // revoke when the user opens their email — by which point the download is
+  // long done — so new Outlook on Windows still can't latch onto a live blob
+  // URL as a phantom "no_name" attachment. A long fallback covers the case
+  // where they never open the email.
+  releaseReportBlob();
+  lastReportBlobUrl = url;
+  lastReportBlobTimer = setTimeout(releaseReportBlob, 120000);
 
   showEmailStep({ gpEmail, subject, bodyText, filename });
+}
+
+// Holds the most recent report download's blob URL so it can be revoked at a
+// safe point rather than on a fragile fixed timer. See emailReport().
+let lastReportBlobUrl = null;
+let lastReportBlobTimer = null;
+function releaseReportBlob() {
+  if (lastReportBlobTimer) { clearTimeout(lastReportBlobTimer); lastReportBlobTimer = null; }
+  if (lastReportBlobUrl) { URL.revokeObjectURL(lastReportBlobUrl); lastReportBlobUrl = null; }
 }
 
 function showEmailStep({ gpEmail, subject, bodyText, filename }) {
@@ -2158,11 +2173,16 @@ async function copyBodyAndOpenEmail() {
   const body = document.getElementById('emailStepBody').value;
   try { await navigator.clipboard.writeText(body); showToast('📋 Body copied — opening email…'); }
   catch { showToast('Could not copy automatically — please copy the body manually.'); }
+  // The download has long since completed by now, so free the blob URL before
+  // the mailto: opens — this prevents new Outlook grabbing it as an empty
+  // phantom attachment.
+  releaseReportBlob();
   document.getElementById('emailStepOpenLink').click();
 }
 
 function closeEmailStep() {
   document.getElementById('emailStepModal').classList.remove('open');
+  releaseReportBlob();
 }
 
 function closeEmailStepSoon() {
